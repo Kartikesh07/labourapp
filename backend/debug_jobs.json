@@ -1,0 +1,66 @@
+{
+  "query": {},
+  "allProfilesData": [
+    {
+      "id": "da35a1fc-4b81-4ce9-a2ed-b62ca016e771",
+      "email": "kartibelamkar@gmail.com",
+      "name": "Kartikesh",
+      "phone": "123456789",
+      "role": "worker",
+      "avatar_url": null,
+      "created_at": "2026-04-01T10:26:56.866519+00:00",
+      "updated_at": "2026-04-01T10:26:56.866519+00:00"
+    },
+    {
+      "id": "3b365b42-f579-4ba4-bade-5fc970809ab3",
+      "email": "shubham@gmail.com",
+      "name": "Shubham",
+      "phone": "1234567890",
+      "role": "employer",
+      "avatar_url": null,
+      "created_at": "2026-04-01T10:27:34.456764+00:00",
+      "updated_at": "2026-04-01T10:29:08.577117+00:00"
+    },
+    {
+      "id": "03f27276-ec29-4368-a4ed-496531a3c7d0",
+      "email": "newwork@cc.com",
+      "name": "hi",
+      "phone": "123",
+      "role": "worker",
+      "avatar_url": null,
+      "created_at": "2026-04-01T10:36:22.512041+00:00",
+      "updated_at": "2026-04-01T10:36:22.512041+00:00"
+    }
+  ],
+  "allJobsCount": 1,
+  "allProfilesCount": 3,
+  "allEmployersCount": 1,
+  "data": [
+    {
+      "id": "e294d034-0230-440e-bef3-2ffd7bfaa312",
+      "employer_id": "3b365b42-f579-4ba4-bade-5fc970809ab3",
+      "title": "Construction Helper",
+      "description": "Helper Need",
+      "category": "construction",
+      "job_type": "full-time",
+      "salary_amount": 15,
+      "salary_period": "hourly",
+      "location": "Solapur",
+      "requirements": [],
+      "is_active": true,
+      "applicants_count": 0,
+      "created_at": "2026-04-01T10:28:46.568318+00:00",
+      "updated_at": "2026-04-01T10:28:46.568318+00:00",
+      "profiles": {
+        "name": "Shubham",
+        "avatar_url": null,
+        "employer_profiles": {
+          "company_name": null,
+          "company_logo_url": null
+        }
+      }
+    }
+  ],
+  "count": 1,
+  "error": null
+}

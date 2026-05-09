@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: laborlink_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    dns_search:
+      - ""
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+    volumes:
+      - ./backend/src:/app/src
+      # Note: For production, you might not want to mount local src over the container's built src,
+      # but for local dev with a watcher, this is common. Since we use `npm start` (node dist/server.js),
+      # mounting src won't immediately update it without a rebuild/watcher.
+      # For now, it's just to test. Alternatively, run `npm run dev` in the container for hot reload.
+
+  redis:
+    image: redis:7-alpine
+    container_name: laborlink_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
