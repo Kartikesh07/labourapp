@@ -1,76 +1,92 @@
 import { Platform, TextStyle, ViewStyle } from 'react-native';
 
-// ─── Color Palette (LIGHT THEME) ────────────────────────────────
+// ─── KaamReady Color Palette (Modern Tech) ──────────────────────────────────
 export const Colors = {
-  // Primary
-  primary: '#6366F1',
-  primaryLight: '#818CF8',
-  primaryDark: '#4338CA',
-  primaryMuted: 'rgba(99, 102, 241, 0.10)',
+  // Primary — Deep Slate/Indigo mix for professional feel
+  primary: '#4338CA',
+  primaryLight: '#6366F1',
+  primaryDark: '#3730A3',
+  primaryDeep: '#1E1B4B',
+  primaryMuted: 'rgba(99, 102, 241, 0.08)',
+  primaryBorder: 'rgba(99, 102, 241, 0.2)',
 
-  // Accent
-  accent: '#F59E0B',
-  accentLight: '#FBBF24',
-  accentDark: '#D97706',
+  // Accent — Emerald (fresh, growth, opportunity)
+  accent: '#10B981',
+  accentLight: '#A7F3D0',
+  accentDark: '#059669',
+  accentMuted: 'rgba(16, 185, 129, 0.12)',
 
-  // Surfaces (Light Mode)
+  // Surfaces — Clean and crisp
   background: '#F8FAFC',
   surface: '#FFFFFF',
   surfaceLight: '#F1F5F9',
   surfaceElevated: '#FFFFFF',
 
-  // Text
+  // Hero
+  hero: '#1E293B',
+  heroDeep: '#0F172A',
+
+  // Text — Optimized for readability
   textPrimary: '#0F172A',
   textSecondary: '#475569',
   textMuted: '#94A3B8',
   textInverse: '#FFFFFF',
+  textAccent: '#10B981',
 
   // Status
   success: '#10B981',
-  successLight: 'rgba(16, 185, 129, 0.10)',
+  successLight: 'rgba(16, 185, 129, 0.1)',
   warning: '#F59E0B',
-  warningLight: 'rgba(245, 158, 11, 0.10)',
+  warningLight: 'rgba(245, 158, 11, 0.1)',
   error: '#EF4444',
   errorLight: 'rgba(239, 68, 68, 0.08)',
   info: '#3B82F6',
-  infoLight: 'rgba(59, 130, 246, 0.10)',
+  infoLight: 'rgba(59, 130, 246, 0.1)',
 
   // Borders
   border: '#E2E8F0',
-  borderLight: '#CBD5E1',
+  borderLight: '#F1F5F9',
 
   // Misc
   white: '#FFFFFF',
-  black: '#000000',
-  overlay: 'rgba(0, 0, 0, 0.4)',
-  shimmer: '#E2E8F0',
-  shimmerHighlight: '#CBD5E1',
+  black: '#020617',
+  overlay: 'rgba(15, 23, 42, 0.7)',
+  shimmer: '#F1F5F9',
+  shimmerHighlight: '#F8FAFC',
 };
 
-// ─── Spacing ─────────────────────────────────────────────────────
+// ─── Spacing ─────────────────────────────────────────────────────────────────
 export const Spacing = {
   xxs: 4,
   xs: 8,
   sm: 12,
   md: 16,
-  lg: 20,
-  xl: 24,
-  xxl: 32,
-  xxxl: 48,
+  lg: 24,
+  xl: 32,
+  xxl: 40,
+  xxxl: 56,
 } as const;
 
-// ─── Border Radii ────────────────────────────────────────────────
+// ─── Border Radii ─────────────────────────────────────────────────────────────
 export const Radii = {
-  sm: 8,
-  md: 12,
-  lg: 16,
+  sm: 4,
+  md: 8,
+  lg: 12,
   xl: 20,
-  xxl: 24,
+  xxl: 28,
   full: 9999,
 } as const;
 
-// ─── Typography ──────────────────────────────────────────────────
-const fontFamily = Platform.OS === 'ios' ? 'System' : 'Roboto';
+// ─── Typography ───────────────────────────────────────────────────────────────
+const getFontFamily = () => {
+  try {
+    return Platform.OS === 'ios' ? 'System' : 'Inter'; // Fallback to System if Inter isn't loaded
+  } catch (e) {
+    return 'System';
+  }
+};
+
+const fontFamily = getFontFamily();
 
 export const Typography = {
   hero: {
@@ -78,30 +94,31 @@ export const Typography = {
     fontSize: 32,
     fontWeight: '800',
     lineHeight: 40,
-    letterSpacing: -0.5,
+    letterSpacing: -1,
     color: Colors.textPrimary,
   } as TextStyle,
 
   h1: {
     fontFamily,
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    lineHeight: 36,
-    letterSpacing: -0.3,
+    lineHeight: 32,
+    letterSpacing: -0.5,
     color: Colors.textPrimary,
   } as TextStyle,
 
   h2: {
     fontFamily,
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '600',
     lineHeight: 28,
+    letterSpacing: -0.25,
     color: Colors.textPrimary,
   } as TextStyle,
 
   h3: {
     fontFamily,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     lineHeight: 24,
     color: Colors.textPrimary,
@@ -112,7 +129,7 @@ export const Typography = {
     fontSize: 16,
     fontWeight: '400',
     lineHeight: 24,
-    color: Colors.textPrimary,
+    color: Colors.textSecondary,
   } as TextStyle,
 
   bodyMedium: {
@@ -134,7 +151,7 @@ export const Typography = {
   caption: {
     fontFamily,
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '400',
     lineHeight: 16,
     color: Colors.textMuted,
   } as TextStyle,
@@ -149,49 +166,51 @@ export const Typography = {
 
   button: {
     fontFamily,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     lineHeight: 20,
-    letterSpacing: 0.3,
+    letterSpacing: 0.1,
   } as TextStyle,
 };
 
-// ─── Shadows ─────────────────────────────────────────────────────
+// ─── Shadows ─────────────────────────────────────────────────────────────────
 export const Shadows = {
-  sm: Platform.select({
-    ios: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3,
-    },
-    android: { elevation: 2 },
-  }) as ViewStyle,
+  sm: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  } as ViewStyle,
 
-  md: Platform.select({
-    ios: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-    },
-    android: { elevation: 4 },
-  }) as ViewStyle,
+  md: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  } as ViewStyle,
 
-  lg: Platform.select({
-    ios: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.12,
-      shadowRadius: 16,
-    },
-    android: { elevation: 8 },
-  }) as ViewStyle,
+  lg: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  } as ViewStyle,
 
   glow: {
-    shadowColor: Colors.primary,
+    shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
+  } as ViewStyle,
+
+  accentGlow: {
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 6,
   } as ViewStyle,

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
+  Animated,
   Pressable,
   Text,
   StyleSheet,
@@ -12,7 +13,7 @@ import { Colors, Spacing, Radii, Typography, Shadows } from '../theme';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'accent';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
@@ -32,44 +33,79 @@ const Button: React.FC<ButtonProps> = ({
   fullWidth = true,
   style,
 }) => {
+  const scale = useRef(new Animated.Value(1)).current;
   const isDisabled = disabled || loading;
 
+  const handlePressIn = () => {
+    if (!isDisabled) {
+      Animated.spring(scale, {
+        toValue: 0.96,
+        useNativeDriver: true,
+        speed: 40,
+        bounciness: 0,
+      }).start();
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!isDisabled) {
+      Animated.spring(scale, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 30,
+        bounciness: 4,
+      }).start();
+    }
+  };
+
+  const variantStyle = styles[variant as keyof typeof styles] as ViewStyle | undefined;
+  const sizeStyle = styles[`size_${size}` as keyof typeof styles] as ViewStyle | undefined;
+  const textVariantStyle = styles[`text_${variant}` as keyof typeof styles] as TextStyle | undefined;
+  const textSizeStyle = styles[`text_${size}` as keyof typeof styles] as TextStyle | undefined;
+
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.base,
-        styles[variant],
-        styles[`size_${size}`],
-        fullWidth && styles.fullWidth,
-        pressed && !isDisabled && styles.pressed,
-        isDisabled && styles.disabled,
-        variant === 'primary' && !isDisabled && Shadows.glow,
+    <Animated.View
+      style={[
+        { transform: [{ scale }] },
+        fullWidth && { width: '100%' },
         style,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator
-          color={variant === 'outline' || variant === 'ghost' ? Colors.primary : Colors.white}
-          size="small"
-        />
-      ) : (
-        <>
-          {icon}
-          <Text
-            style={[
-              styles.text,
-              styles[`text_${variant}`],
-              styles[`text_${size}`],
-              icon ? { marginLeft: Spacing.xs } : undefined,
-            ]}
-          >
-            {title}
-          </Text>
-        </>
-      )}
-    </Pressable>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={isDisabled}
+        style={[
+          styles.base,
+          variantStyle,
+          sizeStyle,
+          variant === 'primary' && !isDisabled && Shadows.md,
+          isDisabled && styles.disabled,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator
+            color={variant === 'outline' || variant === 'ghost' ? Colors.primary : Colors.white}
+            size="small"
+          />
+        ) : (
+          <>
+            {icon}
+            <Text
+              style={[
+                styles.text,
+                textVariantStyle,
+                textSizeStyle,
+                icon ? { marginLeft: Spacing.xs } : undefined,
+              ]}
+            >
+              {title}
+            </Text>
+          </>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 };
 
@@ -78,82 +114,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radii.md,
+    borderRadius: Radii.md, // Changed from full to md for modern look
   },
-  fullWidth: {
-    width: '100%',
-  },
-  pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
-  },
-  disabled: {
-    opacity: 0.5,
-  },
+  disabled: { opacity: 0.45 },
 
-  // ─── Variants ────────────────────
-  primary: {
-    backgroundColor: Colors.primary,
-  },
+  // ─── Variants ────────────────────────────────
+  primary: { backgroundColor: Colors.primary },
+  accent: { backgroundColor: Colors.accent },
   secondary: {
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: Colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: Colors.primaryBorder,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: Colors.border,
   },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  danger: {
-    backgroundColor: Colors.error,
-  },
+  ghost: { backgroundColor: 'transparent' },
+  danger: { backgroundColor: Colors.error },
 
-  // ─── Sizes ───────────────────────
-  size_sm: {
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radii.sm,
-  },
-  size_md: {
-    paddingVertical: Spacing.sm + 2,
-    paddingHorizontal: Spacing.lg,
-  },
-  size_lg: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: Radii.lg,
-  },
+  // ─── Sizes ───────────────────────────────────
+  size_sm: { paddingVertical: Spacing.xs, paddingHorizontal: Spacing.md, minHeight: 40 },
+  size_md: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, minHeight: 48 },
+  size_lg: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, minHeight: 56 },
 
-  // ─── Text ────────────────────────
-  text: {
-    ...Typography.button,
-  } as TextStyle,
-  text_primary: {
-    color: Colors.white,
-  },
-  text_secondary: {
-    color: Colors.textPrimary,
-  },
-  text_outline: {
-    color: Colors.primary,
-  },
-  text_ghost: {
-    color: Colors.primary,
-  },
-  text_danger: {
-    color: Colors.white,
-  },
-  text_sm: {
-    fontSize: 14,
-  },
-  text_md: {
-    fontSize: 16,
-  },
-  text_lg: {
-    fontSize: 18,
-  },
+  // ─── Text ────────────────────────────────────
+  text: { ...Typography.button } as TextStyle,
+  text_primary: { color: Colors.white },
+  text_accent: { color: Colors.white },
+  text_secondary: { color: Colors.primary },
+  text_outline: { color: Colors.textPrimary },
+  text_ghost: { color: Colors.primary },
+  text_danger: { color: Colors.white },
+  text_sm: { fontSize: 14 },
+  text_md: { fontSize: 16 },
+  text_lg: { fontSize: 17 },
 });
 
 export default Button;

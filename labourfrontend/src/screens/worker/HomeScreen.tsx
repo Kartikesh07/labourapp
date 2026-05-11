@@ -6,7 +6,8 @@ import {
   TextInput,
   Pressable,
   RefreshControl,
-  ActivityIndicator
+  ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, Radii, Typography } from '../../theme';
+import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useJobs } from '../../hooks/useJobs';
 import { useAuthStore } from '../../store/authStore';
 import { WorkerStackParamList, JobFilters, JobType } from '../../types';
@@ -23,12 +24,12 @@ import { JobCardSkeleton } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
 import ErrorState from '../../components/ErrorState';
 
-const JOB_TYPES: { value: JobType | ''; label: string }[] = [
-  { value: '', label: 'All' },
-  { value: 'full-time', label: 'Full Time' },
-  { value: 'part-time', label: 'Part Time' },
-  { value: 'contract', label: 'Contract' },
-  { value: 'daily', label: 'Daily' },
+const JOB_TYPES: { value: JobType | ''; labelKey: string }[] = [
+  { value: '', labelKey: 'workerHome.all' },
+  { value: 'full-time', labelKey: 'workerHome.fullTime' },
+  { value: 'part-time', labelKey: 'workerHome.partTime' },
+  { value: 'contract', labelKey: 'workerHome.contract' },
+  { value: 'daily', labelKey: 'workerHome.daily' },
 ];
 
 const HomeScreen: React.FC = () => {
@@ -46,217 +47,248 @@ const HomeScreen: React.FC = () => {
   };
 
   const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-    isRefetching,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage
+    data, isLoading, isError, refetch, isRefetching,
+    hasNextPage, fetchNextPage, isFetchingNextPage,
   } = useJobs(filters);
 
-  // Flatten infinite query data into a single array
-  const jobs = data?.pages.flatMap((page) => page.data.jobs) || [];
-
-  const handleSearch = useCallback(() => {
-    setAppliedSearch(search);
-  }, [search]);
-
+  const jobs = data?.pages.flatMap((page) => page.data?.jobs ?? []) ?? [];
+  const handleSearch = useCallback(() => setAppliedSearch(search), [search]);
   const firstName = user?.name?.split(' ')[0] || t('common.there', 'there');
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{t('workerHome.greeting', { name: firstName })}</Text>
-          <Text style={styles.subGreeting}>{t('workerHome.subGreeting')}</Text>
-        </View>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={20} color={Colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('workerHome.searchPlaceholder')}
-            placeholderTextColor={Colors.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-          {search.length > 0 && (
-            <Pressable
-              onPress={() => {
-                setSearch('');
-                setAppliedSearch('');
-              }}
-            >
-              <Ionicons name="close-circle" size={20} color={Colors.textMuted} />
-            </Pressable>
-          )}
-        </View>
-      </View>
-
-      {/* Filter Chips */}
-      <View style={styles.filterContainer}>
-        <FlashList
-          horizontal
-          estimatedItemSize={100}
-          showsHorizontalScrollIndicator={false}
-          data={JOB_TYPES}
-          contentContainerStyle={{ paddingHorizontal: Spacing.xl }}
-          keyExtractor={(item) => item.value}
-          renderItem={({ item }) => {
-            let labelKey = 'workerHome.all';
-            if (item.value === 'full-time') labelKey = 'workerHome.fullTime';
-            else if (item.value === 'part-time') labelKey = 'workerHome.partTime';
-            else if (item.value === 'contract') labelKey = 'workerHome.contract';
-            else if (item.value === 'daily') labelKey = 'workerHome.daily';
-            
-            return (
-              <Pressable
-                onPress={() => setActiveFilter(item.value as JobType | '')}
-                style={[
-                  styles.filterChip,
-                  activeFilter === item.value && styles.filterChipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    activeFilter === item.value && styles.filterChipTextActive,
-                  ]}
-                >
-                  {t(labelKey)}
-                </Text>
-              </Pressable>
-            );
-          }}
-          ItemSeparatorComponent={() => <View style={{ width: Spacing.xs }} />}
-        />
-      </View>
-
-      {/* Job List */}
-      {isLoading ? (
-        <View style={styles.listContainer}>
-          {[1, 2, 3, 4].map((i) => (
-            <JobCardSkeleton key={i} />
-          ))}
-        </View>
-      ) : isError ? (
-        <ErrorState message={t('common.error')} onRetry={refetch} />
-      ) : (
-        <FlashList
-          data={jobs}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-          }
-          onEndReached={() => {
-            if (hasNextPage && !isFetchingNextPage) {
-              fetchNextPage();
-            }
-          }}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <View style={{ padding: 16 }}>
-                <ActivityIndicator size="small" color={Colors.primary} />
+    <View style={styles.root}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        {/* ── Header ─────────────────────────────────── */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View style={styles.greetingBlock}>
+              <Text style={styles.greetingLabel}>{t('workerHome.greeting', 'Welcome back,')}</Text>
+              <Text style={styles.greetingName}>{firstName}</Text>
+            </View>
+            <Pressable style={styles.profileBtn}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>
               </View>
-            ) : null
-          }
-          estimatedItemSize={150}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <JobCard
-              job={item}
-              onPress={() => navigation.navigate('JobDetail', { jobId: item.id })}
+            </Pressable>
+          </View>
+
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search-outline" size={20} color={Colors.textMuted} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t('workerHome.searchPlaceholder', 'Search for jobs...')}
+                placeholderTextColor={Colors.textMuted}
+                value={search}
+                onChangeText={setSearch}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+              />
+              {search.length > 0 && (
+                <Pressable onPress={() => { setSearch(''); setAppliedSearch(''); }}>
+                  <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
+          </View>
+
+          {/* Filter Chips */}
+          <View style={styles.filterContainer}>
+            <FlashList
+              horizontal
+              estimatedItemSize={80}
+              showsHorizontalScrollIndicator={false}
+              data={JOB_TYPES}
+              contentContainerStyle={styles.filterList}
+              keyExtractor={(item) => item.value}
+              renderItem={({ item }) => {
+                const isActive = activeFilter === item.value;
+                return (
+                  <Pressable
+                    onPress={() => setActiveFilter(item.value as JobType | '')}
+                    style={[styles.chip, isActive && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                      {t(item.labelKey)}
+                    </Text>
+                  </Pressable>
+                );
+              }}
+              ItemSeparatorComponent={() => <View style={{ width: Spacing.xs }} />}
+            />
+          </View>
+        </View>
+
+        {/* ── Job List ────────────────────────────────── */}
+        <View style={styles.listContainer}>
+          {isLoading ? (
+            <View style={styles.listPad}>
+              {[1, 2, 3, 4].map((i) => <JobCardSkeleton key={i} />)}
+            </View>
+          ) : isError ? (
+            <ErrorState message={t('common.error')} onRetry={refetch} />
+          ) : (
+            <FlashList
+              data={jobs}
+              refreshControl={
+                <RefreshControl 
+                  refreshing={isRefetching} 
+                  onRefresh={refetch} 
+                  colors={[Colors.primary]} 
+                  tintColor={Colors.primary} 
+                />
+              }
+              onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
+              onEndReachedThreshold={0.5}
+              ListHeaderComponent={<Text style={styles.listTitle}>{t('workerHome.latestJobs', 'Latest Opportunities')}</Text>}
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <View style={{ padding: 16 }}>
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                  </View>
+                ) : null
+              }
+              estimatedItemSize={150}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.listPad}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item, index }) => (
+                <JobCard
+                  job={item}
+                  index={index}
+                  onPress={() => navigation.navigate('JobDetail', { jobId: item.id })}
+                />
+              )}
+              ListEmptyComponent={
+                <EmptyState
+                  icon="search-outline"
+                  title={t('workerHome.noJobsFound', 'No jobs found')}
+                  subtitle={t('workerHome.noJobsSubtitle', 'Try adjusting your search or filters')}
+                />
+              }
             />
           )}
-          ListEmptyComponent={
-            <EmptyState
-              icon="briefcase-outline"
-              title={t('myJobs.noJobs')}
-              subtitle={t('workerHome.noJobsSubtitle', 'Try changing your search or filters')}
-            />
-          }
-        />
-      )}
-    </SafeAreaView>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safe: {
+  root: {
     flex: 1,
     backgroundColor: Colors.background,
   },
+  safe: {
+    flex: 1,
+  },
+  // ── Header ──────────────────────────────────
   header: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
+    backgroundColor: Colors.white,
+    paddingTop: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  greeting: {
-    ...Typography.h1,
-    color: Colors.textPrimary,
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
-  subGreeting: {
+  greetingBlock: {
+    flex: 1,
+  },
+  greetingLabel: {
     ...Typography.bodySm,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
+    color: Colors.textSecondary,
+  },
+  greetingName: {
+    ...Typography.h2,
+    color: Colors.textPrimary,
+    marginTop: 2,
+  },
+  profileBtn: {
+    padding: 2,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.primaryBorder,
+  },
+  avatarText: {
+    ...Typography.h3,
+    color: Colors.primary,
+    fontWeight: '700',
   },
   searchContainer: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceLight,
     borderRadius: Radii.md,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    height: 48,
+    gap: Spacing.xs,
     borderWidth: 1,
     borderColor: Colors.border,
-    gap: Spacing.sm,
   },
   searchInput: {
     flex: 1,
-    ...Typography.body,
+    ...Typography.bodySm,
     color: Colors.textPrimary,
-    paddingVertical: Spacing.xs,
+    height: '100%',
   },
   filterContainer: {
     marginBottom: Spacing.sm,
   },
-  filterChip: {
+  filterList: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xs,
+  },
+  chip: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radii.full,
-    backgroundColor: Colors.surface,
+    paddingVertical: 8,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  filterChipActive: {
-    backgroundColor: Colors.primaryMuted,
+  chipActive: {
+    backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-  filterChipText: {
+  chipText: {
     ...Typography.caption,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
     fontWeight: '600',
   },
-  filterChipTextActive: {
-    color: Colors.primary,
+  chipTextActive: {
+    color: Colors.white,
   },
+  // ── List ────────────────────────────────────
   listContainer: {
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xxl,
+    flex: 1,
+  },
+  listTitle: {
+    ...Typography.h3,
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+    color: Colors.textPrimary,
+  },
+  listPad: {
+    paddingBottom: Spacing.xl,
   },
 });
 
