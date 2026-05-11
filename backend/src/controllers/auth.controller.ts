@@ -52,17 +52,27 @@ export const register = async (req: Request, res: Response) => {
     // Wait a brief moment to ensure trigger has created the profile
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const { data: profile } = await supabaseAdmin
+    // Fetch full merged profile
+    const { data: baseProfile } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', authData.user.id)
       .single();
 
+    let fullProfile = { ...baseProfile };
+    if (baseProfile.role === 'worker') {
+      const { data: workerData } = await supabaseAdmin.from('worker_profiles').select('*').eq('id', authData.user.id).single();
+      if (workerData) fullProfile = { ...fullProfile, ...workerData };
+    } else {
+      const { data: employerData } = await supabaseAdmin.from('employer_profiles').select('*').eq('id', authData.user.id).single();
+      if (employerData) fullProfile = { ...fullProfile, ...employerData };
+    }
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
-        user: profile,
+        user: fullProfile,
         session: signInData.session
       }
     });
@@ -85,17 +95,27 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: error.message, data: null });
     }
 
-    const { data: profile } = await supabaseAdmin
+    // Fetch full merged profile
+    const { data: baseProfile } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', data.user.id)
       .single();
 
+    let fullProfile = { ...baseProfile };
+    if (baseProfile.role === 'worker') {
+      const { data: workerData } = await supabaseAdmin.from('worker_profiles').select('*').eq('id', data.user.id).single();
+      if (workerData) fullProfile = { ...fullProfile, ...workerData };
+    } else {
+      const { data: employerData } = await supabaseAdmin.from('employer_profiles').select('*').eq('id', data.user.id).single();
+      if (employerData) fullProfile = { ...fullProfile, ...employerData };
+    }
+
     res.status(200).json({
       success: true,
       message: 'Logged in successfully',
       data: {
-        user: profile,
+        user: fullProfile,
         session: data.session
       }
     });
