@@ -13,21 +13,21 @@ const getStore = () => {
   return undefined;
 };
 
-// Strict rate limiter for Authentication
+// Strict rate limiter for Authentication - increased for development
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per `window` (here, per 15 minutes)
+  max: 100, // Limit each IP to 100 login/register attempts per 15 minutes
   message: 'Too many requests from this IP, please try again after 15 minutes',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
   store: getStore(),
 });
 
-// Moderate rate limiter for APIs that do writing (applications, creating jobs)
+// Moderate rate limiter for APIs that do writing - increased for development
 export const apiWriteLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 50, // Limit each IP to 50 requests per hour
-  message: 'Too many requests created from this IP, please try again after an hour',
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 write requests per 15 minutes
+  message: 'Too many requests created from this IP, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
   store: getStore(),
