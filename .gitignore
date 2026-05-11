@@ -2,7 +2,6 @@
 **/dist/
 **/.expo/
 .agents/
-.github/
 *.log
 **/.env
 **/.env.local
