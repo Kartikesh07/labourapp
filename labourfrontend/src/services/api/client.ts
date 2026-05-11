@@ -1,9 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// Docker default maps 3000 -> 3000. It doesn't restrict you if you keep using your LAN IP.
-// Feel free to test with this URL or 'http://localhost:3000/api' depending on device.
-const API_BASE_URL = 'http://192.168.10.36:3000/api';
+// Use EXPO_PUBLIC_ prefix to make env variables available in the client-side code
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

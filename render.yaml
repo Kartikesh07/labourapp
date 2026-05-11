@@ -1,0 +1,37 @@
+services:
+  # 1. The Backend API
+  - type: web
+    name: laborlink-backend
+    env: node
+    plan: free
+    # Root directory for this service
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: REDIS_URL
+        fromService:
+          name: laborlink-redis
+          type: redis
+          property: connectionString
+      # The following must be set manually in the Render Dashboard 
+      # or via a secret group for security:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+  # 2. Redis Cache
+  - type: redis
+    name: laborlink-redis
+    plan: free
+    ipAllowList: [] # Only allow internal connections from other services
