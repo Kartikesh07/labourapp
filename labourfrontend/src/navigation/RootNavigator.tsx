@@ -12,16 +12,31 @@ const RootNavigator: React.FC = () => {
   const { isAuthenticated, isLoading, isHydrated, user, hydrate } = useAuthStore();
 
   const typedUser = user as any;
-  const needsLocation = isAuthenticated && user && (!typedUser.location || typedUser.location === 'Not specified' || typedUser.location.trim() === '');
-  const [showLocationPrompt, setShowLocationPrompt] = useState(!!needsLocation);
+  
+  // A user needs a location if they are authenticated AND
+  // their location is missing from BOTH the main user object 
+  // AND the potentially nested role-specific data (worker_profiles/employer_profiles)
+  const userLocation = typedUser?.location || 
+                       typedUser?.worker_profiles?.location || 
+                       typedUser?.employer_profiles?.location;
+                       
+  const hasLocation = userLocation && 
+                      userLocation !== 'Not specified' && 
+                      userLocation.trim() !== '';
+
+  const needsLocation = isAuthenticated && user && !hasLocation;
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
 
   useEffect(() => {
     hydrate();
   }, []);
 
   useEffect(() => {
+    // Only show prompt if hydration is done, user is authenticated, and location is truly missing
     if (needsLocation && !isLoading && isHydrated) {
       setShowLocationPrompt(true);
+    } else {
+      setShowLocationPrompt(false);
     }
   }, [needsLocation, isLoading, isHydrated]);
 
