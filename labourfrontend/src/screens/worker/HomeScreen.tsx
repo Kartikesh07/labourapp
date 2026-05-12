@@ -7,7 +7,6 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
-  StatusBar,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+  Layout,
+} from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useJobs } from '../../hooks/useJobs';
 import { useAuthStore } from '../../store/authStore';
@@ -56,30 +60,33 @@ const HomeScreen: React.FC = () => {
   const firstName = user?.name?.split(' ')[0] || t('common.there', 'there');
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-      <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.headerSafe} edges={['top']}>
         {/* ── Header ─────────────────────────────────── */}
-        <View style={styles.header}>
+        <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.header}>
           <View style={styles.headerTop}>
+            <View style={[styles.avatar, Shadows.sm]}>
+              <Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>
+            </View>
+
             <View style={styles.greetingBlock}>
-              <Text style={styles.greetingLabel}>{t('workerHome.greeting', 'Welcome back,')}</Text>
+              <Text style={styles.greetingLabel}>{t('workerHome.greeting', 'Good day,')}</Text>
               <Text style={styles.greetingName}>{firstName}</Text>
             </View>
-            <Pressable style={styles.profileBtn}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>
-              </View>
+
+            <Pressable style={styles.notifBtn}>
+              <Ionicons name="notifications-outline" size={24} color={Colors.primary} />
+              <View style={styles.notifDot} />
             </Pressable>
           </View>
 
           {/* Search Bar */}
-          <View style={styles.searchContainer}>
+          <View style={styles.searchRow}>
             <View style={styles.searchBar}>
-              <Ionicons name="search-outline" size={20} color={Colors.textMuted} />
+              <Ionicons name="search" size={20} color={Colors.primary} />
               <TextInput
                 style={styles.searchInput}
-                placeholder={t('workerHome.searchPlaceholder', 'Search for jobs...')}
+                placeholder={t('workerHome.searchPlaceholder')}
                 placeholderTextColor={Colors.textMuted}
                 value={search}
                 onChangeText={setSearch}
@@ -92,23 +99,26 @@ const HomeScreen: React.FC = () => {
                 </Pressable>
               )}
             </View>
+            <Pressable style={[styles.searchBtn, Shadows.glow]} onPress={handleSearch}>
+              <Ionicons name="options-outline" size={22} color={Colors.white} />
+            </Pressable>
           </View>
 
           {/* Filter Chips */}
-          <View style={styles.filterContainer}>
+          <View style={styles.filterRow}>
             <FlashList
               horizontal
-              estimatedItemSize={80}
+              estimatedItemSize={100}
               showsHorizontalScrollIndicator={false}
               data={JOB_TYPES}
-              contentContainerStyle={styles.filterList}
+              contentContainerStyle={{ paddingHorizontal: Spacing.md }}
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => {
                 const isActive = activeFilter === item.value;
                 return (
                   <Pressable
                     onPress={() => setActiveFilter(item.value as JobType | '')}
-                    style={[styles.chip, isActive && styles.chipActive]}
+                    style={[styles.chip, isActive && styles.chipActive, isActive && Shadows.glow]}
                   >
                     <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
                       {t(item.labelKey)}
@@ -116,152 +126,182 @@ const HomeScreen: React.FC = () => {
                   </Pressable>
                 );
               }}
-              ItemSeparatorComponent={() => <View style={{ width: Spacing.xs }} />}
+              ItemSeparatorComponent={() => <View style={{ width: Spacing.sm }} />}
             />
           </View>
-        </View>
-
-        {/* ── Job List ────────────────────────────────── */}
-        <View style={styles.listContainer}>
-          {isLoading ? (
-            <View style={styles.listPad}>
-              {[1, 2, 3, 4].map((i) => <JobCardSkeleton key={i} />)}
-            </View>
-          ) : isError ? (
-            <ErrorState message={t('common.error')} onRetry={refetch} />
-          ) : (
-            <FlashList
-              data={jobs}
-              refreshControl={
-                <RefreshControl 
-                  refreshing={isRefetching} 
-                  onRefresh={refetch} 
-                  colors={[Colors.primary]} 
-                  tintColor={Colors.primary} 
-                />
-              }
-              onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
-              onEndReachedThreshold={0.5}
-              ListHeaderComponent={<Text style={styles.listTitle}>{t('workerHome.latestJobs', 'Latest Opportunities')}</Text>}
-              ListFooterComponent={
-                isFetchingNextPage ? (
-                  <View style={{ padding: 16 }}>
-                    <ActivityIndicator size="small" color={Colors.primary} />
-                  </View>
-                ) : null
-              }
-              estimatedItemSize={150}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listPad}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item, index }) => (
-                <JobCard
-                  job={item}
-                  index={index}
-                  onPress={() => navigation.navigate('JobDetail', { jobId: item.id })}
-                />
-              )}
-              ListEmptyComponent={
-                <EmptyState
-                  icon="search-outline"
-                  title={t('workerHome.noJobsFound', 'No jobs found')}
-                  subtitle={t('workerHome.noJobsSubtitle', 'Try adjusting your search or filters')}
-                />
-              }
-            />
-          )}
-        </View>
+        </Animated.View>
       </SafeAreaView>
+
+      {/* ── Job List ────────────────────────────────── */}
+      <View style={styles.listContainer}>
+        {isLoading ? (
+          <View style={styles.listPad}>
+            {[1, 2, 3, 4].map((i) => <JobCardSkeleton key={i} />)}
+          </View>
+        ) : isError ? (
+          <ErrorState message={t('common.error')} onRetry={refetch} />
+        ) : (
+          <FlashList
+            data={jobs}
+            refreshControl={
+              <RefreshControl 
+                refreshing={isRefetching} 
+                onRefresh={refetch} 
+                colors={[Colors.primary]} 
+                tintColor={Colors.primary} 
+              />
+            }
+            onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              isFetchingNextPage ? (
+                <View style={{ padding: 16 }}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                </View>
+              ) : null
+            }
+            estimatedItemSize={150}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listPad}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item, index }) => (
+              <JobCard
+                job={item}
+                index={index}
+                onPress={() => navigation.navigate('JobDetail', { jobId: item.id })}
+              />
+            )}
+            ListEmptyComponent={
+              <EmptyState
+                icon="briefcase-outline"
+                title={t('myJobs.noJobs')}
+                subtitle={t('workerHome.noJobsSubtitle', 'Try changing your search or filters')}
+              />
+            }
+          />
+        )}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
+  container: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-  safe: {
-    flex: 1,
-  },
-  // ── Header ──────────────────────────────────
-  header: {
+  headerSafe: {
     backgroundColor: Colors.white,
-    paddingTop: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    ...Shadows.sm,
+    zIndex: 10,
+  },
+  header: {
+    paddingBottom: Spacing.sm,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-  },
-  greetingBlock: {
-    flex: 1,
-  },
-  greetingLabel: {
-    ...Typography.bodySm,
-    color: Colors.textSecondary,
-  },
-  greetingName: {
-    ...Typography.h2,
-    color: Colors.textPrimary,
-    marginTop: 2,
-  },
-  profileBtn: {
-    padding: 2,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
+    gap: Spacing.sm,
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: Radii.lg,
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.primaryLight,
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.white,
+  },
+  greetingBlock: {
+    flex: 1,
+  },
+  greetingLabel: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+  greetingName: {
+    fontSize: 20,
+    color: Colors.primaryDeep,
+    fontWeight: '800',
+    marginTop: -2,
+  },
+  notifBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surfaceLight,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.primaryBorder,
+    borderColor: Colors.border,
   },
-  avatarText: {
-    ...Typography.h3,
-    color: Colors.primary,
-    fontWeight: '700',
+  notifDot: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.accent,
+    borderWidth: 1.5,
+    borderColor: Colors.white,
   },
-  searchContainer: {
-    paddingHorizontal: Spacing.lg,
+
+  // ── Search ──────────────────────────────────
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surfaceLight,
     borderRadius: Radii.md,
     paddingHorizontal: Spacing.md,
-    height: 48,
-    gap: Spacing.xs,
-    borderWidth: 1,
+    height: 52,
+    gap: Spacing.sm,
+    borderWidth: 1.5,
     borderColor: Colors.border,
   },
   searchInput: {
     flex: 1,
-    ...Typography.bodySm,
+    fontSize: 15,
     color: Colors.textPrimary,
-    height: '100%',
+    fontWeight: '500',
   },
-  filterContainer: {
-    marginBottom: Spacing.sm,
+  searchBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  filterList: {
-    paddingHorizontal: Spacing.lg,
+
+  // ── Filter Chips ────────────────────────────
+  filterRow: {
     paddingBottom: Spacing.xs,
   },
   chip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 8,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 10,
     borderRadius: Radii.md,
     backgroundColor: Colors.white,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.border,
   },
   chipActive: {
@@ -269,26 +309,21 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   chipText: {
-    ...Typography.caption,
+    fontSize: 14,
     color: Colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   chipTextActive: {
     color: Colors.white,
   },
+
   // ── List ────────────────────────────────────
   listContainer: {
     flex: 1,
   },
-  listTitle: {
-    ...Typography.h3,
-    paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.md,
-    color: Colors.textPrimary,
-  },
   listPad: {
-    paddingBottom: Spacing.xl,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xxl,
   },
 });
 

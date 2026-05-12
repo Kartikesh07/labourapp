@@ -12,12 +12,51 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+  Layout,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring
+} from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useMyJobs } from '../../hooks/useJobs';
 import { useAuthStore } from '../../store/authStore';
 import { EmployerStackParamList } from '../../types';
 import { JobCardSkeleton } from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+interface StatCardProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  value: number;
+  label: string;
+  bgColor: string;
+  iconColor: string;
+  index: number;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ icon, value, label, bgColor, iconColor, index }) => {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View 
+      entering={FadeInDown.delay(400 + (index * 100)).springify()}
+      style={[styles.statCard, { backgroundColor: bgColor }, Shadows.md, animatedStyle]}
+    >
+      <View style={[styles.statIconWrap, { backgroundColor: iconColor + '15' }]}>
+        <Ionicons name={icon} size={22} color={iconColor} />
+      </View>
+      <Text style={[styles.statValue, { color: iconColor }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </Animated.View>
+  );
+};
 
 const DashboardScreen: React.FC = () => {
   const { t } = useTranslation();
@@ -27,11 +66,28 @@ const DashboardScreen: React.FC = () => {
 
   const activeJobs = jobs?.filter((j) => j.is_active) || [];
   const totalApplicants = jobs?.reduce((sum, j) => sum + (j.applicants_count || 0), 0) || 0;
-
   const firstName = user?.name?.split(' ')[0] || t('common.there', 'there');
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.headerSafe} edges={['top']}>
+        <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.heroHeader}>
+          <View style={[styles.decorHero, styles.dh1]} />
+          <View style={[styles.decorHero, styles.dh2]} />
+          <View style={styles.heroInner}>
+            <View>
+              <Text style={styles.heroGreeting}>
+                {t('employerDashboard.greeting', { name: firstName })} 👋
+              </Text>
+              <Text style={styles.heroSub}>{t('employerDashboard.subGreeting')}</Text>
+            </View>
+            <View style={[styles.heroAvatar, Shadows.sm]}>
+              <Text style={styles.heroAvatarText}>{firstName.charAt(0).toUpperCase()}</Text>
+            </View>
+          </View>
+        </Animated.View>
+      </SafeAreaView>
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -44,253 +100,341 @@ const DashboardScreen: React.FC = () => {
           />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.greeting}>{t('employerDashboard.greeting', { name: firstName })}</Text>
-          <Text style={styles.subGreeting}>{t('employerDashboard.subGreeting')}</Text>
-        </View>
-
-        {/* Stats Row */}
+        {/* ── Stats Row ───────────────────────────────── */}
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: Colors.primaryMuted }]}>
-            <Ionicons name="briefcase" size={28} color={Colors.primary} />
-            <Text style={[styles.statValue, { color: Colors.primary }]}>
-              {activeJobs.length}
-            </Text>
-            <Text style={styles.statLabel}>{t('employerDashboard.activeJobs')}</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: Colors.successLight }]}>
-            <Ionicons name="people" size={28} color={Colors.success} />
-            <Text style={[styles.statValue, { color: Colors.success }]}>
-              {totalApplicants}
-            </Text>
-            <Text style={styles.statLabel}>{t('employerDashboard.totalApplicants')}</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: Colors.warningLight }]}>
-            <Ionicons name="document-text" size={28} color={Colors.warning} />
-            <Text style={[styles.statValue, { color: Colors.warning }]}>
-              {jobs?.length || 0}
-            </Text>
-            <Text style={styles.statLabel}>{t('employerDashboard.allJobs')}</Text>
-          </View>
+          <StatCard
+            index={0}
+            icon="briefcase"
+            value={activeJobs.length}
+            label={t('employerDashboard.activeJobs')}
+            bgColor={Colors.white}
+            iconColor={Colors.primary}
+          />
+          <StatCard
+            index={1}
+            icon="people"
+            value={totalApplicants}
+            label={t('employerDashboard.totalApplicants')}
+            bgColor={Colors.white}
+            iconColor={Colors.success}
+          />
+          <StatCard
+            index={2}
+            icon="document-text"
+            value={jobs?.length || 0}
+            label={t('employerDashboard.allJobs')}
+            bgColor={Colors.white}
+            iconColor={Colors.accent}
+          />
         </View>
 
-        {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>{t('employerDashboard.quickActions')}</Text>
-        <Pressable
-          onPress={() => navigation.navigate('CreateJob')}
-          style={({ pressed }) => [
-            styles.actionCard,
-            Shadows.sm,
-            pressed && styles.pressed,
-          ]}
-        >
-          <View style={styles.actionIcon}>
-            <Ionicons name="add-circle" size={28} color={Colors.primary} />
-          </View>
-          <View style={styles.actionText}>
-            <Text style={styles.actionTitle}>{t('employerDashboard.postNewJob')}</Text>
-            <Text style={styles.actionDesc}>{t('employerDashboard.postNewJobDesc')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
-        </Pressable>
+        {/* ── Post Job CTA ──────────────────────────────── */}
+        <Animated.View entering={FadeInDown.delay(700).springify()}>
+          <AnimatedPressable
+            onPress={() => navigation.navigate('CreateJob')}
+            style={({ pressed }) => [styles.ctaCard, Shadows.glow]}
+          >
+            <View style={styles.ctaIconWrap}>
+              <Ionicons name="add-circle" size={32} color={Colors.white} />
+            </View>
+            <View style={styles.ctaText}>
+              <Text style={styles.ctaTitle}>{t('employerDashboard.postNewJob')}</Text>
+              <Text style={styles.ctaDesc}>{t('employerDashboard.postNewJobDesc')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color={Colors.white} />
+          </AnimatedPressable>
+        </Animated.View>
 
-        {/* Recent Jobs */}
-        <Text style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>
-          {t('employerDashboard.recentJobs')}
-        </Text>
+        {/* ── Recent Jobs ───────────────────────────────── */}
+        <Animated.View entering={FadeInDown.delay(800).springify()}>
+          <Text style={styles.sectionTitle}>{t('employerDashboard.recentJobs')}</Text>
+        </Animated.View>
 
         {isLoading ? (
-          <>
+          <View style={{ paddingHorizontal: Spacing.xl }}>
             <JobCardSkeleton />
             <JobCardSkeleton />
-          </>
+          </View>
         ) : isError ? (
           <ErrorState message={t('common.error')} onRetry={refetch} />
         ) : activeJobs.length === 0 ? (
-          <View style={styles.emptyJobs}>
-            <Ionicons name="briefcase-outline" size={40} color={Colors.textMuted} />
+          <Animated.View entering={FadeInDown.springify()} style={styles.emptyJobs}>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="briefcase-outline" size={48} color={Colors.primary} />
+            </View>
             <Text style={styles.emptyText}>{t('myJobs.noJobs')}</Text>
             <Text style={styles.emptySubtext}>{t('myJobs.noJobsSubtitle')}</Text>
-          </View>
+          </Animated.View>
         ) : (
-          activeJobs.slice(0, 3).map((job) => (
-            <Pressable
-              key={job.id}
-              onPress={() =>
-                navigation.navigate('Applicants', {
-                  jobId: job.id,
-                  jobTitle: job.title,
-                })
-              }
-              style={({ pressed }) => [
-                styles.jobCard,
-                Shadows.sm,
-                pressed && styles.pressed,
-              ]}
-            >
-              <View style={styles.jobCardLeft}>
-                <Text style={styles.jobCardTitle} numberOfLines={1}>
-                  {job.title}
-                </Text>
-                <Text style={styles.jobCardLocation} numberOfLines={1}>
-                  {job.location}
-                </Text>
-              </View>
-              <View style={styles.jobCardRight}>
-                <View style={styles.applicantsBadge}>
-                  <Ionicons name="people" size={14} color={Colors.primary} />
-                  <Text style={styles.applicantsBadgeText}>
-                    {job.applicants_count}
-                  </Text>
+          <View style={styles.jobList}>
+            {activeJobs.slice(0, 3).map((job, index) => (
+              <AnimatedPressable
+                key={job.id}
+                entering={FadeInDown.delay(900 + (index * 100)).springify()}
+                onPress={() => navigation.navigate('Applicants', { jobId: job.id, jobTitle: job.title })}
+                style={[styles.jobCard, Shadows.sm]}
+              >
+                <View style={styles.jobStripe} />
+                <View style={styles.jobCardInner}>
+                  <View style={styles.jobCardLeft}>
+                    <Text style={styles.jobCardTitle} numberOfLines={1}>{job.title}</Text>
+                    <View style={styles.jobMeta}>
+                      <Ionicons name="location-outline" size={12} color={Colors.textMuted} />
+                      <Text style={styles.jobCardLocation} numberOfLines={1}>{job.location}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.jobCardRight}>
+                    <View style={styles.applicantsBadge}>
+                      <Ionicons name="people" size={14} color={Colors.primary} />
+                      <Text style={styles.applicantsBadgeText}>{job.applicants_count}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                  </View>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-              </View>
-            </Pressable>
-          ))
+              </AnimatedPressable>
+            ))}
+          </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safe: {
+  container: {
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSafe: {
+    backgroundColor: Colors.hero,
+    ...Shadows.sm,
+    zIndex: 10,
+  },
   scroll: {
-    paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xxxl,
   },
-  header: {
-    paddingTop: Spacing.md,
+
+  // ── Hero Header ──────────────────────────────
+  heroHeader: {
+    backgroundColor: Colors.hero,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.lg,
+    overflow: 'hidden',
   },
-  greeting: {
-    ...Typography.h1,
-    color: Colors.textPrimary,
+  decorHero: {
+    position: 'absolute',
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  subGreeting: {
-    ...Typography.bodySm,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
+  dh1: { width: 220, height: 220, top: -110, right: -80 },
+  dh2: { width: 140, height: 140, bottom: -40, left: -20, backgroundColor: 'rgba(249,115,22,0.18)' },
+  heroInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xl,
+    zIndex: 1,
   },
+  heroGreeting: {
+    fontSize: 24,
+    color: Colors.white,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  heroSub: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  heroAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: Radii.lg,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  heroAvatarText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.white,
+  },
+
+  // ── Stats ────────────────────────────────────
   statsRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.lg,
     marginBottom: Spacing.xl,
   },
   statCard: {
     flex: 1,
+    backgroundColor: Colors.white,
     borderRadius: Radii.lg,
     padding: Spacing.md,
     alignItems: 'center',
-    gap: Spacing.xxs,
-  },
-  statValue: {
-    ...Typography.h2,
-    fontSize: 24,
-  },
-  statLabel: {
-    ...Typography.caption,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    fontSize: 11,
-  },
-  sectionTitle: {
-    ...Typography.h3,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
-    gap: Spacing.md,
+    borderColor: Colors.borderLight,
   },
-  pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-  },
-  actionIcon: {
+  statIconWrap: {
     width: 48,
     height: 48,
     borderRadius: Radii.md,
-    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+
+  // ── CTA ──────────────────────────────────────
+  ctaCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: Radii.xl,
+    padding: Spacing.xl,
+    marginHorizontal: Spacing.xl,
+    marginBottom: Spacing.xl,
+    gap: Spacing.md,
+  },
+  ctaIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: Radii.lg,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionText: {
-    flex: 1,
+  ctaText: { flex: 1 },
+  ctaTitle: {
+    fontSize: 18,
+    color: Colors.white,
+    fontWeight: '800',
   },
-  actionTitle: {
-    ...Typography.bodyMedium,
-    color: Colors.textPrimary,
-  },
-  actionDesc: {
-    ...Typography.caption,
-    color: Colors.textMuted,
+  ctaDesc: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '500',
     marginTop: 2,
   },
-  emptyJobs: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxl,
-    gap: Spacing.xs,
+
+  // ── Section ───────────────────────────────────
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    letterSpacing: -0.2,
   },
-  emptyText: {
-    ...Typography.bodyMedium,
-    color: Colors.textSecondary,
+  jobList: {
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.sm,
   },
-  emptySubtext: {
-    ...Typography.caption,
-    color: Colors.textMuted,
-  },
+
+  // ── Job Cards ─────────────────────────────────
   jobCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white,
     borderRadius: Radii.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.xs,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
+  },
+  jobStripe: {
+    width: 5,
+    backgroundColor: Colors.primary,
+  },
+  jobCardInner: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.lg,
   },
   jobCardLeft: {
     flex: 1,
-    marginRight: Spacing.sm,
+    marginRight: Spacing.md,
   },
   jobCardTitle: {
-    ...Typography.bodyMedium,
-    color: Colors.textPrimary,
+    fontSize: 16,
+    color: Colors.primaryDeep,
+    fontWeight: '700',
+  },
+  jobMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
   },
   jobCardLocation: {
-    ...Typography.caption,
+    fontSize: 12,
     color: Colors.textMuted,
-    marginTop: 2,
+    fontWeight: '500',
   },
   jobCardRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
   applicantsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     backgroundColor: Colors.primaryMuted,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xxs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
     borderRadius: Radii.full,
   },
   applicantsBadgeText: {
-    ...Typography.caption,
+    fontSize: 14,
     color: Colors.primary,
+    fontWeight: '800',
+  },
+
+  // ── Empty ─────────────────────────────────────
+  emptyJobs: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xxxl,
+    marginHorizontal: Spacing.xl,
+    backgroundColor: Colors.white,
+    borderRadius: Radii.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
+  },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: Colors.textPrimary,
     fontWeight: '700',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    marginTop: 4,
   },
 });
 
