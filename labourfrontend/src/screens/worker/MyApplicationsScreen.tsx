@@ -12,22 +12,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+} from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useMyApplications } from '../../hooks/useApplications';
 import { Application, WorkerStackParamList } from '../../types';
-import { formatTimeAgo, getJobTypeLabel, formatSalary } from '../../utils/formatters';
+import { formatTimeAgo, formatSalary } from '../../utils/formatters';
 import Avatar from '../../components/Avatar';
 import StatusBadge from '../../components/StatusBadge';
 import { JobCardSkeleton } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
 import ErrorState from '../../components/ErrorState';
 
-const ApplicationCard: React.FC<{ application: Application }> = ({ application }) => {
+const ApplicationCard: React.FC<{ application: Application; index: number }> = ({ application, index }) => {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<WorkerStackParamList>>();
   const job = application.jobs;
   
-  // Note: we fetch the companyName from the deeply nested structure based on our backend select query
   const employerProfile = job?.profiles?.employer_profiles;
   const companyName = employerProfile?.company_name || job?.profiles?.name || t('employerProfile.title');
 
@@ -38,10 +41,13 @@ const ApplicationCard: React.FC<{ application: Application }> = ({ application }
   };
 
   return (
-    <View style={[styles.card, Shadows.sm]}>
+    <Animated.View 
+      entering={FadeInDown.delay(index * 100).springify()}
+      style={[styles.card, Shadows.sm]}
+    >
       <Pressable style={styles.cardHeader} onPress={navigateToEmployer}>
         <View style={styles.cardHeaderLeft}>
-          <Avatar name={companyName} uri={job?.profiles?.avatar_url} size={40} />
+          <Avatar name={companyName} uri={job?.profiles?.avatar_url} size={44} />
           <View style={[styles.cardHeaderText, { marginLeft: Spacing.sm }]}>
             <Text style={styles.jobTitle} numberOfLines={1}>
               {job?.title || t('navigation.jobs')}
@@ -50,22 +56,24 @@ const ApplicationCard: React.FC<{ application: Application }> = ({ application }
               <Text style={styles.companyText} numberOfLines={1}>
                 {companyName}
               </Text>
-              <Ionicons name="chevron-forward" size={12} color={Colors.textMuted} style={{ marginTop: 2, marginLeft: 2 }} />
+              <Ionicons name="chevron-forward" size={12} color={Colors.primary} style={{ marginLeft: 2 }} />
             </View>
           </View>
         </View>
         <StatusBadge status={application.status} />
       </Pressable>
 
+      <View style={styles.divider} />
+
       {job && (
         <View style={styles.cardDetails}>
           <View style={styles.detailItem}>
-            <Ionicons name="location-outline" size={14} color={Colors.textMuted} />
+            <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
             <Text style={styles.detailText}>{job.location}</Text>
           </View>
           <View style={styles.detailItem}>
-            <Ionicons name="cash-outline" size={14} color={Colors.textMuted} />
-            <Text style={styles.detailText}>
+            <Ionicons name="cash-outline" size={14} color={Colors.success} />
+            <Text style={[styles.detailText, { color: Colors.success, fontWeight: '700' }]}>
               {formatSalary(job.salary_amount, job.salary_period)}
             </Text>
           </View>
@@ -82,9 +90,10 @@ const ApplicationCard: React.FC<{ application: Application }> = ({ application }
       )}
 
       <View style={styles.cardFooter}>
+        <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
         <Text style={styles.timeText}>{t('myApplications.applied')} {formatTimeAgo(application.created_at)}</Text>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -94,12 +103,12 @@ const MyApplicationsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
+      <Animated.View entering={FadeInUp.springify()} style={styles.header}>
         <Text style={styles.headerTitle}>{t("myApplications.title")}</Text>
         <Text style={styles.headerSubtitle}>
           {data ? `${data.length} ${t('navigation.applications')}` : t('common.loading')}
         </Text>
-      </View>
+      </Animated.View>
 
       {isLoading ? (
         <View style={styles.listContainer}>
@@ -124,7 +133,7 @@ const MyApplicationsScreen: React.FC = () => {
               colors={[Colors.primary]}
             />
           }
-          renderItem={({ item }) => <ApplicationCard application={item} />}
+          renderItem={({ item, index }) => <ApplicationCard application={item} index={index} />}
           ListEmptyComponent={
             <EmptyState
               icon="document-text-outline"
@@ -145,29 +154,32 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
+    paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
   },
   headerTitle: {
-    ...Typography.h1,
+    fontSize: 28,
+    fontWeight: '800',
     color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
-    ...Typography.bodySm,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
+    fontSize: 15,
+    color: Colors.textSecondary,
+    marginTop: 2,
+    fontWeight: '500',
   },
   listContainer: {
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xxl,
   },
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderRadius: Radii.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -181,33 +193,27 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: Spacing.sm,
   },
-  companyBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   cardHeaderText: {
     flex: 1,
   },
   jobTitle: {
-    ...Typography.bodyMedium,
+    fontSize: 17,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
   companyText: {
-    ...Typography.caption,
-    color: Colors.textMuted,
-    marginTop: 2,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.borderLight,
+    marginVertical: Spacing.md,
   },
   cardDetails: {
     flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    gap: Spacing.lg,
   },
   detailItem: {
     flexDirection: 'row',
@@ -215,36 +221,42 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   detailText: {
-    ...Typography.caption,
-    color: Colors.textMuted,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '500',
   },
   messageContainer: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
     backgroundColor: Colors.surfaceLight,
-    borderRadius: Radii.sm,
-    padding: Spacing.sm,
+    borderRadius: Radii.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   messageLabel: {
-    ...Typography.caption,
+    fontSize: 11,
+    fontWeight: '700',
     color: Colors.textMuted,
     marginBottom: 4,
-    fontSize: 11,
+    textTransform: 'uppercase',
   },
   messageText: {
-    ...Typography.bodySm,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    color: Colors.textPrimary,
     fontStyle: 'italic',
+    lineHeight: 20,
   },
   cardFooter: {
-    marginTop: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: Spacing.md,
     paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   timeText: {
-    ...Typography.caption,
-    color: Colors.textMuted,
     fontSize: 11,
+    color: Colors.textMuted,
+    fontWeight: '600',
   },
 });
 

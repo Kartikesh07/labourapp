@@ -10,7 +10,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, Radii, Typography } from '../../theme';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+} from 'react-native-reanimated';
+import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useProfile, useUpdateProfile } from '../../hooks/useProfile';
 import { useAuth } from '../../hooks/useAuth';
 import { EmployerProfile } from '../../types';
@@ -89,9 +93,9 @@ const EmployerProfileScreen: React.FC = () => {
         }),
       });
       setIsEditing(false);
-      Alert.alert(t('common.welcome'), t('messages.profileUpdated'));
+      Alert.alert('Success', t('messages.profileUpdated'));
     } catch (err) {
-      Alert.alert(t('common.error'), t('common.error'));
+      Alert.alert(t('common.error'), 'Failed to update profile');
     }
   };
 
@@ -118,25 +122,24 @@ const EmployerProfileScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Header */}
-        <View style={styles.profileHeader}>
+        <Animated.View entering={FadeInUp.springify()} style={styles.profileHeader}>
           {isEditing ? (
             <Pressable onPress={pickImage} style={styles.avatarEditContainer}>
               <Avatar
                 name={employerProfile?.company_name || profile.name}
                 uri={editData.avatar_uri}
-                size={90}
+                size={100}
                 showBorder
-                onPress={pickImage}
               />
-              <View style={styles.cameraIconContainer}>
-                <Ionicons name="camera" size={16} color={Colors.white} />
+              <View style={[styles.cameraIconContainer, Shadows.md]}>
+                <Ionicons name="camera" size={18} color={Colors.white} />
               </View>
             </Pressable>
           ) : (
             <Avatar
               name={employerProfile?.company_name || profile.name}
               uri={profile.avatar_url}
-              size={90}
+              size={100}
               showBorder
             />
           )}
@@ -148,10 +151,11 @@ const EmployerProfileScreen: React.FC = () => {
             </View>
           )}
           <Text style={styles.email}>{profile.email}</Text>
-        </View>
+        </Animated.View>
 
         {isEditing ? (
-          <View style={styles.editContainer}>
+          /* ─── Edit Mode ─── */
+          <Animated.View entering={FadeInDown.springify()} style={[styles.editContainer, Shadows.md]}>
             <Input
               label={t('profile.name')}
               value={editData.name}
@@ -191,7 +195,7 @@ const EmployerProfileScreen: React.FC = () => {
               <Button
                 title={t('common.cancel')}
                 onPress={() => setIsEditing(false)}
-                variant="ghost"
+                variant="secondary"
                 fullWidth={false}
                 style={{ flex: 1 }}
               />
@@ -203,48 +207,61 @@ const EmployerProfileScreen: React.FC = () => {
                 style={{ flex: 2 }}
               />
             </View>
-          </View>
+          </Animated.View>
         ) : (
+          /* ─── View Mode ─── */
           <>
-            <View style={styles.infoCard}>
+            <Animated.View entering={FadeInDown.delay(200).springify()} style={[styles.infoCard, Shadows.sm]}>
               <View style={styles.infoCardHeader}>
-                <Ionicons name="business-outline" size={20} color={Colors.primary} />
+                <View style={styles.infoIconWrap}>
+                  <Ionicons name="business-outline" size={18} color={Colors.primary} />
+                </View>
                 <Text style={styles.infoCardTitle}>{t('profile.companyInfo')}</Text>
-                <Pressable onPress={startEditing} style={styles.editButton}>
-                  <Ionicons name="pencil" size={16} color={Colors.primary} />
+                <Pressable onPress={startEditing} style={[styles.editButton, Shadows.sm]}>
+                  <Ionicons name="pencil" size={14} color={Colors.white} />
                 </Pressable>
               </View>
-              {employerProfile?.description && (
+              {employerProfile?.description ? (
                 <Text style={styles.descText}>{employerProfile.description}</Text>
+              ) : (
+                <Text style={[styles.descText, { color: Colors.textMuted, fontStyle: 'italic' }]}>
+                  No description provided. Tap edit to add one.
+                </Text>
               )}
+              
+              <View style={styles.divider} />
+              
               <InfoRow icon="call-outline" label={t('profile.phone')} value={profile.phone} />
               <InfoRow
                 icon="location-outline"
                 label={t('profile.location')}
-                value={employerProfile?.location || t('profile.notAvailable')}
+                value={employerProfile?.location || 'Not specified'}
               />
-            </View>
+            </Animated.View>
           </>
         )}
 
         {/* Settings / Language */}
-        <View style={{ marginTop: Spacing.xl }}>
+        <Animated.View entering={FadeInDown.delay(300).springify()} style={{ marginTop: Spacing.md }}>
           <LanguageSelector />
-        </View>
+        </Animated.View>
 
-        <Button
-          title={t('common.signOut')}
-          onPress={() =>
-            Alert.alert(t('common.signOutConfirmTitle'), t('common.signOutConfirmMessage'), [
-              { text: t('common.cancel'), style: 'cancel' },
-              { text: t('common.signOut'), style: 'destructive', onPress: logout },
-            ])
-          }
-          variant="ghost"
-          loading={logoutLoading}
-          icon={<Ionicons name="log-out-outline" size={20} color={Colors.error} />}
-          style={{ marginTop: Spacing.lg }}
-        />
+        {/* Logout */}
+        <Animated.View entering={FadeInDown.delay(400).springify()}>
+          <Button
+            title={t('common.signOut')}
+            onPress={() =>
+              Alert.alert(t('common.signOutConfirmTitle'), t('common.signOutConfirmMessage'), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.signOut'), style: 'destructive', onPress: logout },
+              ])
+            }
+            variant="ghost"
+            loading={logoutLoading}
+            icon={<Ionicons name="log-out-outline" size={20} color={Colors.error} />}
+            style={{ marginTop: Spacing.xl, marginBottom: Spacing.xxl }}
+          />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -256,7 +273,7 @@ const InfoRow: React.FC<{
   value: string;
 }> = ({ icon, label, value }) => (
   <View style={styles.infoRow}>
-    <Ionicons name={icon} size={16} color={Colors.textMuted} />
+    <Ionicons name={icon} size={16} color={Colors.primary} style={{ opacity: 0.7 }} />
     <Text style={styles.infoLabel}>{label}</Text>
     <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
   </View>
@@ -273,103 +290,124 @@ const styles = StyleSheet.create({
   },
   profileHeader: {
     alignItems: 'center',
-    paddingTop: Spacing.xl,
+    paddingTop: Spacing.xxl,
     paddingBottom: Spacing.lg,
   },
   name: {
-    ...Typography.h2,
+    fontSize: 24,
+    fontWeight: '800',
     color: Colors.textPrimary,
     marginTop: Spacing.md,
+    letterSpacing: -0.5,
   },
   companyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xxs,
-    marginTop: Spacing.xxs,
+    marginTop: 4,
   },
   companyName: {
-    ...Typography.bodyMedium,
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.primary,
   },
   email: {
-    ...Typography.bodySm,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
+    fontSize: 15,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+    marginTop: 2,
   },
   avatarEditContainer: {
     position: 'relative',
   },
   cameraIconContainer: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: 4,
+    right: 4,
     backgroundColor: Colors.primary,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: Colors.surface,
+    borderColor: Colors.white,
   },
   editContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white,
     borderRadius: Radii.xl,
-    padding: Spacing.lg,
+    padding: Spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   editActions: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
   },
   infoCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderRadius: Radii.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   infoCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  infoIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   infoCardTitle: {
-    ...Typography.h3,
+    fontSize: 16,
+    fontWeight: '800',
     color: Colors.textPrimary,
     flex: 1,
   },
   editButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primaryMuted,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   descText: {
-    ...Typography.body,
+    fontSize: 15,
     color: Colors.textSecondary,
-    marginBottom: Spacing.sm,
     lineHeight: 22,
+    fontWeight: '400',
+    marginBottom: Spacing.md,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.borderLight,
+    marginBottom: Spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 6,
   },
   infoLabel: {
-    ...Typography.caption,
+    fontSize: 13,
+    fontWeight: '600',
     color: Colors.textMuted,
-    width: 80,
+    width: 85,
   },
   infoValue: {
-    ...Typography.bodySm,
+    fontSize: 14,
+    fontWeight: '700',
     color: Colors.textPrimary,
     flex: 1,
   },

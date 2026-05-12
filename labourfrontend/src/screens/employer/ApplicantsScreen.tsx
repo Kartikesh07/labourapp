@@ -14,6 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+} from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useJobApplicants, useUpdateApplicationStatus } from '../../hooks/useApplications';
 import { EmployerStackParamList, Application, ApplicationStatus } from '../../types';
@@ -31,9 +35,10 @@ interface ApplicantCardProps {
   application: Application;
   onUpdateStatus: (status: ApplicationStatus) => void;
   isUpdating: boolean;
+  index: number;
 }
 
-const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onUpdateStatus, isUpdating }) => {
+const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onUpdateStatus, isUpdating, index }) => {
   const { t } = useTranslation();
   const profile = application.profiles;
   const workerProfile = application.worker_profiles || profile?.worker_profiles;
@@ -41,7 +46,10 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onUpdateStat
   const navigation = useNavigation<NativeStackNavigationProp<EmployerStackParamList>>();
 
   return (
-    <View style={[styles.card, Shadows.sm]}>
+    <Animated.View 
+      entering={FadeInDown.delay(index * 100).springify()}
+      style={[styles.card, Shadows.sm]}
+    >
       {/* Applicant Header */}
       <Pressable 
         style={styles.applicantHeader}
@@ -50,12 +58,12 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onUpdateStat
         <Avatar
           name={profile?.name || t('applicants.worker')}
           uri={profile?.avatar_url}
-          size={48}
+          size={52}
         />
         <View style={styles.applicantInfo}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.applicantName}>{profile?.name || t('applicants.worker')}</Text>
-            <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={{ marginLeft: 4 }} />
+            <Ionicons name="chevron-forward" size={14} color={Colors.primary} style={{ marginLeft: 4 }} />
           </View>
           <Text style={styles.applicantMeta}>
             {t('myApplications.applied')} {formatTimeAgo(application.created_at)}
@@ -64,30 +72,21 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onUpdateStat
         <StatusBadge status={application.status} />
       </Pressable>
 
+      <View style={styles.divider} />
+
       {/* Contact */}
       {profile && (
         <View style={styles.contactRow}>
           <View style={styles.contactItem}>
-            <Ionicons name="mail-outline" size={14} color={Colors.textMuted} />
+            <Ionicons name="mail-outline" size={14} color={Colors.textSecondary} />
             <Text style={styles.contactText} numberOfLines={1}>
               {profile.email}
             </Text>
           </View>
           <View style={styles.contactItem}>
-            <Ionicons name="call-outline" size={14} color={Colors.textMuted} />
+            <Ionicons name="call-outline" size={14} color={Colors.textSecondary} />
             <Text style={styles.contactText}>{profile.phone}</Text>
           </View>
-        </View>
-      )}
-
-      {/* Worker Skills */}
-      {workerProfile?.skills && workerProfile.skills.length > 0 && (
-        <View style={styles.skillsRow}>
-          {workerProfile.skills.slice(0, 5).map((skill, i) => (
-            <View key={i} style={styles.skillChip}>
-              <Text style={styles.skillText}>{skill}</Text>
-            </View>
-          ))}
         </View>
       )}
 
@@ -106,6 +105,17 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onUpdateStat
               <Text style={styles.workerInfoText}>{workerProfile.experience}</Text>
             </View>
           )}
+        </View>
+      )}
+
+      {/* Worker Skills */}
+      {workerProfile?.skills && workerProfile.skills.length > 0 && (
+        <View style={styles.skillsRow}>
+          {workerProfile.skills.slice(0, 4).map((skill, i) => (
+            <View key={i} style={styles.skillChip}>
+              <Text style={styles.skillText}>{skill}</Text>
+            </View>
+          ))}
         </View>
       )}
 
@@ -132,12 +142,12 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onUpdateStat
           <Button
             title={t('applicants.reject')}
             onPress={() => onUpdateStatus('rejected')}
-            variant="danger"
+            variant="secondary"
             size="sm"
             fullWidth={false}
             style={{ flex: 1 }}
             loading={isUpdating}
-            icon={<Ionicons name="close" size={16} color={Colors.white} />}
+            icon={<Ionicons name="close" size={16} color={Colors.textPrimary} />}
           />
         </View>
       )}
@@ -153,7 +163,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onUpdateStat
           style={{ marginTop: Spacing.sm }}
         />
       )}
-    </View>
+    </Animated.View>
   );
 };
 
@@ -187,14 +197,14 @@ const ApplicantsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <View style={styles.header}>
+      <Animated.View entering={FadeInUp.springify()} style={styles.header}>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {jobTitle}
         </Text>
         <Text style={styles.headerSubtitle}>
           {data ? `${data.length} ${t('applicants.title').toLowerCase()}` : t('common.loading')}
         </Text>
-      </View>
+      </Animated.View>
 
       {isLoading ? (
         <View style={styles.listContainer}>
@@ -219,9 +229,10 @@ const ApplicantsScreen: React.FC = () => {
               colors={[Colors.primary]}
             />
           }
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <ApplicantCard
               application={item}
+              index={index}
               onUpdateStatus={(status) => handleUpdateStatus(item.id, status)}
               isUpdating={updateStatusMutation.isPending}
             />
@@ -246,87 +257,95 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
+    paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
   },
   headerTitle: {
-    ...Typography.h2,
+    fontSize: 24,
+    fontWeight: '800',
     color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
-    ...Typography.bodySm,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
+    fontSize: 15,
+    color: Colors.textSecondary,
+    marginTop: 2,
+    fontWeight: '500',
   },
   listContainer: {
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xxl,
   },
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderRadius: Radii.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   applicantHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
   applicantInfo: {
     flex: 1,
   },
   applicantName: {
-    ...Typography.bodyMedium,
+    fontSize: 17,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
   applicantMeta: {
-    ...Typography.caption,
+    fontSize: 12,
     color: Colors.textMuted,
     marginTop: 2,
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.borderLight,
+    marginVertical: Spacing.md,
   },
   contactRow: {
     flexDirection: 'row',
     gap: Spacing.md,
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     flex: 1,
   },
   contactText: {
-    ...Typography.caption,
-    color: Colors.textMuted,
+    fontSize: 13,
+    color: Colors.textSecondary,
     flex: 1,
+    fontWeight: '500',
   },
   skillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.xxs,
-    marginTop: Spacing.sm,
+    gap: Spacing.xs,
+    marginTop: Spacing.md,
   },
   skillChip: {
     backgroundColor: Colors.primaryMuted,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Colors.primaryBorder,
   },
   skillText: {
-    ...Typography.caption,
-    color: Colors.primary,
-    fontWeight: '600',
     fontSize: 11,
+    color: Colors.primary,
+    fontWeight: '700',
   },
   workerInfoRow: {
     flexDirection: 'row',
-    gap: Spacing.md,
+    gap: Spacing.lg,
     marginTop: Spacing.sm,
   },
   workerInfoItem: {
@@ -335,33 +354,38 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   workerInfoText: {
-    ...Typography.caption,
-    color: Colors.textMuted,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '500',
   },
   messageContainer: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
     backgroundColor: Colors.surfaceLight,
-    borderRadius: Radii.sm,
-    padding: Spacing.sm,
+    borderRadius: Radii.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   messageLabel: {
-    ...Typography.caption,
+    fontSize: 11,
+    fontWeight: '700',
     color: Colors.textMuted,
     marginBottom: 4,
-    fontSize: 11,
+    textTransform: 'uppercase',
   },
   messageText: {
-    ...Typography.bodySm,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    lineHeight: 20,
     fontStyle: 'italic',
   },
   actions: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: Colors.borderLight,
   },
 });
 

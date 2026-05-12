@@ -8,11 +8,17 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, Radii, Typography } from '../../theme';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+  Layout,
+} from 'react-native-reanimated';
+import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useCreateJob } from '../../hooks/useJobs';
 import { createJobSchema } from '../../utils/validators';
 import { JobType, SalaryPeriod } from '../../types';
@@ -102,11 +108,13 @@ const CreateJobScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.pageTitle}>{t('createJob.title')}</Text>
-          <Text style={styles.pageSubtitle}>{t('createJob.subtitle', 'Fill in the details to attract the best workers')}</Text>
+          <Animated.View entering={FadeInUp.springify()}>
+            <Text style={styles.pageTitle}>{t('createJob.title')}</Text>
+            <Text style={styles.pageSubtitle}>{t('createJob.subtitle', 'Fill in the details to attract the best workers')}</Text>
+          </Animated.View>
 
           {/* Job Info */}
-          <View style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(200).springify()} style={[styles.section, Shadows.md]}>
             <Text style={styles.sectionTitle}>{t('jobDetail.aboutJob')}</Text>
 
             <Input
@@ -128,42 +136,44 @@ const CreateJobScreen: React.FC = () => {
               error={fieldErrors.description}
             />
 
-            {/* Category Chips */}
             <Text style={styles.inputLabel}>{t("createJob.category")}</Text>
             <View style={styles.chipRow}>
-              {CATEGORIES.map((cat) => (
-                <Button
-                  key={cat}
-                  title={cat}
-                  onPress={() => setCategory(cat)}
-                  variant={category === cat ? 'primary' : 'secondary'}
-                  size="sm"
-                  fullWidth={false}
-                />
-              ))}
+              {CATEGORIES.map((cat) => {
+                const isActive = category === cat;
+                return (
+                  <Pressable
+                    key={cat}
+                    onPress={() => setCategory(cat)}
+                    style={[styles.chip, isActive && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{cat}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
             {fieldErrors.category && (
               <Text style={styles.errorText}>{fieldErrors.category}</Text>
             )}
 
-            {/* Job Type */}
-            <Text style={[styles.inputLabel, { marginTop: Spacing.md }]}>{t("createJob.jobType")}</Text>
+            <Text style={[styles.inputLabel, { marginTop: Spacing.lg }]}>{t("createJob.jobType")}</Text>
             <View style={styles.chipRow}>
-              {JOB_TYPES.map((jt) => (
-                <Button
-                  key={jt.value}
-                  title={jt.label}
-                  onPress={() => setJobType(jt.value)}
-                  variant={jobType === jt.value ? 'primary' : 'secondary'}
-                  size="sm"
-                  fullWidth={false}
-                />
-              ))}
+              {JOB_TYPES.map((jt) => {
+                const isActive = jobType === jt.value;
+                return (
+                  <Pressable
+                    key={jt.value}
+                    onPress={() => setJobType(jt.value)}
+                    style={[styles.chip, isActive && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{jt.label}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
-          </View>
+          </Animated.View>
 
           {/* Compensation */}
-          <View style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(400).springify()} style={[styles.section, Shadows.md]}>
             <Text style={styles.sectionTitle}>{t('jobDetail.salary')}</Text>
 
             <Input
@@ -178,21 +188,23 @@ const CreateJobScreen: React.FC = () => {
 
             <Text style={styles.inputLabel}>{t('createJob.salaryPeriod')}</Text>
             <View style={styles.chipRow}>
-              {SALARY_PERIODS.map((sp) => (
-                <Button
-                  key={sp.value}
-                  title={sp.label}
-                  onPress={() => setSalaryPeriod(sp.value)}
-                  variant={salaryPeriod === sp.value ? 'primary' : 'secondary'}
-                  size="sm"
-                  fullWidth={false}
-                />
-              ))}
+              {SALARY_PERIODS.map((sp) => {
+                const isActive = salaryPeriod === sp.value;
+                return (
+                  <Pressable
+                    key={sp.value}
+                    onPress={() => setSalaryPeriod(sp.value)}
+                    style={[styles.chip, isActive && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{sp.label}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
-          </View>
+          </Animated.View>
 
           {/* Location & Requirements */}
-          <View style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(600).springify()} style={[styles.section, Shadows.md]}>
             <Text style={styles.sectionTitle}>{t('jobDetail.title')}</Text>
 
             <Input
@@ -212,16 +224,18 @@ const CreateJobScreen: React.FC = () => {
               multiline
               numberOfLines={4}
             />
-          </View>
+          </Animated.View>
 
-          <Button
-            title={t('createJob.submit')}
-            onPress={handleCreate}
-            loading={createMutation.isPending}
-            size="lg"
-            icon={<Ionicons name="checkmark-circle" size={20} color={Colors.white} />}
-            style={{ marginTop: Spacing.sm }}
-          />
+          <Animated.View entering={FadeInDown.delay(800).springify()}>
+            <Button
+              title={t('createJob.submit')}
+              onPress={handleCreate}
+              loading={createMutation.isPending}
+              size="lg"
+              icon={<Ionicons name="checkmark-circle" size={20} color={Colors.white} />}
+              style={{ marginTop: Spacing.sm }}
+            />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -239,42 +253,69 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxxl,
   },
   pageTitle: {
-    ...Typography.h1,
+    fontSize: 28,
+    fontWeight: '800',
     color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
   pageSubtitle: {
-    ...Typography.bodySm,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
+    fontSize: 15,
+    color: Colors.textSecondary,
+    marginTop: 4,
     marginBottom: Spacing.xl,
+    fontWeight: '500',
   },
   section: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white,
     borderRadius: Radii.xl,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   sectionTitle: {
-    ...Typography.h3,
+    fontSize: 18,
+    fontWeight: '800',
     color: Colors.textPrimary,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
+    letterSpacing: -0.2,
   },
   inputLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
   },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surfaceLight,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  chipActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  chipText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontWeight: '700',
+  },
+  chipTextActive: {
+    color: Colors.white,
   },
   errorText: {
     ...Typography.caption,
     color: Colors.error,
     marginTop: Spacing.xxs,
+    fontWeight: '600',
   },
 });
 

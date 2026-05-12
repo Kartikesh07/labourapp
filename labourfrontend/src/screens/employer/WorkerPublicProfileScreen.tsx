@@ -1,12 +1,17 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, StyleSheet, ScrollView, Linking, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Linking, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, Radii, Typography } from '../../theme';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+} from 'react-native-reanimated';
+import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { EmployerStackParamList } from '../../types';
 import Avatar from '../../components/Avatar';
+import Button from '../../components/Button';
 
 type RouteParams = RouteProp<EmployerStackParamList, 'WorkerPublicProfile'>;
 
@@ -30,7 +35,7 @@ const WorkerPublicProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
-        <View style={styles.profileHeader}>
+        <Animated.View entering={FadeInUp.springify()} style={styles.profileHeader}>
           <Avatar
             name={name}
             uri={avatar_url}
@@ -44,45 +49,44 @@ const WorkerPublicProfileScreen: React.FC = () => {
               <Text style={styles.metaText}>{location}</Text>
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Action Buttons */}
-        <View style={styles.actionsContainer}>
+        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.actionsContainer}>
           {phone && (
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.callButton]} 
+            <Button
+              title={t('applicants.contact')}
               onPress={() => Linking.openURL(`tel:${phone}`)}
-            >
-              <Ionicons name="call" size={20} color="#FFF" />
-              <Text style={styles.actionText}>{t('applicants.contact')}</Text>
-            </TouchableOpacity>
+              icon={<Ionicons name="call" size={18} color={Colors.white} />}
+              style={{ flex: 1 }}
+              size="lg"
+            />
           )}
           
           {email && (
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.emailButton]} 
+            <Button
+              title="Email"
               onPress={() => Linking.openURL(`mailto:${email}`)}
-            >
-              <Ionicons name="mail" size={20} color="#FFF" />
-              <Text style={styles.actionText}>{t('auth.emailLabel')}</Text>
-            </TouchableOpacity>
+              variant="outline"
+              icon={<Ionicons name="mail" size={18} color={Colors.primary} />}
+              style={{ flex: 1 }}
+              size="lg"
+            />
           )}
-        </View>
-
-        {/* Contact Info */}
-        <View style={styles.infoCard}>
-          <InfoRow icon="mail-outline" label={t('auth.emailLabel')} value={email || t('profile.notAvailable')} />
-          <InfoRow icon="call-outline" label={t('profile.phone')} value={phone || t('profile.notAvailable')} />
-        </View>
+        </Animated.View>
 
         {/* Professional Details */}
-        <View style={styles.infoCard}>
+        <Animated.View entering={FadeInDown.delay(400).springify()} style={[styles.infoCard, Shadows.sm]}>
           <View style={styles.infoCardHeader}>
-            <Ionicons name="briefcase-outline" size={20} color={Colors.primary} />
+            <View style={styles.infoIconWrap}>
+              <Ionicons name="briefcase-outline" size={18} color={Colors.primary} />
+            </View>
             <Text style={styles.infoCardTitle}>{t('discover.professionalDetails')}</Text>
           </View>
           
-          <InfoRow icon="trophy-outline" label={t('profile.experience')} value={experience || t('profile.notAvailable')} />
+          <InfoRow icon="trophy-outline" label={t('profile.experience')} value={experience || 'Not specified'} />
+          <InfoRow icon="call-outline" label={t('profile.phone')} value={phone || 'Not specified'} />
+          <InfoRow icon="mail-outline" label="Email" value={email || 'Not specified'} />
           
           {bio && (
             <View style={styles.bioContainer}>
@@ -104,7 +108,7 @@ const WorkerPublicProfileScreen: React.FC = () => {
               </View>
             </View>
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -116,7 +120,7 @@ const InfoRow: React.FC<{
   value: string;
 }> = ({ icon, label, value }) => (
   <View style={styles.infoRow}>
-    <Ionicons name={icon} size={18} color={Colors.textMuted} />
+    <Ionicons name={icon} size={16} color={Colors.primary} style={{ opacity: 0.7 }} />
     <Text style={styles.infoLabel}>{label}</Text>
     <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
   </View>
@@ -129,7 +133,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.xl,
     paddingBottom: Spacing.xxxl,
   },
   profileHeader: {
@@ -137,53 +141,41 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   name: {
-    ...Typography.h1,
+    fontSize: 24,
+    fontWeight: '800',
     color: Colors.textPrimary,
     marginTop: Spacing.md,
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xxs,
-    marginTop: Spacing.xs,
+    gap: 4,
+    marginTop: 8,
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   metaText: {
-    ...Typography.bodyMedium,
-    color: Colors.primary,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontWeight: '600',
   },
   actionsContainer: {
     flexDirection: 'row',
     gap: Spacing.sm,
     marginBottom: Spacing.xl,
-    paddingHorizontal: Spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.md,
-    borderRadius: Radii.lg,
-    gap: Spacing.xs,
-  },
-  callButton: {
-    backgroundColor: Colors.success,
-  },
-  emailButton: {
-    backgroundColor: Colors.primary,
-  },
-  actionText: {
-    ...Typography.button,
-    color: '#FFF',
   },
   infoCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white,
     borderRadius: Radii.xl,
-    padding: Spacing.lg,
+    padding: Spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: Spacing.md,
+    borderColor: Colors.borderLight,
   },
   infoCardHeader: {
     flexDirection: 'row',
@@ -191,28 +183,40 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
+  infoIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   infoCardTitle: {
-    ...Typography.h3,
+    fontSize: 16,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
   descText: {
-    ...Typography.body,
+    fontSize: 15,
     color: Colors.textSecondary,
     lineHeight: 24,
+    fontWeight: '400',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
+    paddingVertical: 8,
   },
   infoLabel: {
-    ...Typography.bodyMedium,
-    color: Colors.textSecondary,
-    width: 90,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    width: 80,
   },
   infoValue: {
-    ...Typography.bodyMedium,
+    fontSize: 14,
+    fontWeight: '700',
     color: Colors.textPrimary,
     flex: 1,
   },
@@ -223,9 +227,11 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.borderLight,
   },
   bioLabel: {
-    ...Typography.label,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    marginBottom: 8,
+    textTransform: 'uppercase',
   },
   skillsSection: {
     marginTop: Spacing.md,
@@ -240,14 +246,16 @@ const styles = StyleSheet.create({
   },
   skillChip: {
     backgroundColor: Colors.primaryMuted,
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.md,
     paddingVertical: 6,
     borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Colors.primaryBorder,
   },
   skillText: {
-    ...Typography.caption,
+    fontSize: 12,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
 

@@ -5,9 +5,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
-import { Colors, Spacing, Radii, Typography } from '../../theme';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+} from 'react-native-reanimated';
+import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useWorkers } from '../../hooks/useWorkers';
 import Avatar from '../../components/Avatar';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function DiscoverWorkersScreen() {
     const { t } = useTranslation();
@@ -82,25 +88,27 @@ export default function DiscoverWorkersScreen() {
         handleSearch(skill);
     };
 
-    const renderWorker = ({ item }: { item: any }) => (
-        <TouchableOpacity
-            style={styles.card}
+    const renderWorker = ({ item, index }: { item: any, index: number }) => (
+        <AnimatedTouchableOpacity
+            entering={FadeInDown.delay(index * 100).springify()}
+            style={[styles.card, Shadows.sm]}
             onPress={() => navigation.navigate('WorkerPublicProfile', { workerData: item })}
         >
             <View style={styles.cardHeader}>
-                <Avatar name={item.name} uri={item.avatar_url} size={60} />
+                <Avatar name={item.name} uri={item.avatar_url} size={64} />
                 <View style={styles.cardInfo}>
                     <Text style={styles.name}>{item.name}</Text>
                     <View style={styles.row}>
                         <Ionicons name="location" size={14} color={Colors.primary} />
                         <Text style={styles.metaText} numberOfLines={1}>{item.location}</Text>
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: item.available ? Colors.success + '20' : Colors.error + '20' }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: item.available ? Colors.successLight : Colors.errorLight }]}>
                         <Text style={[styles.statusText, { color: item.available ? Colors.success : Colors.error }]}>
                             {item.available ? t('profile.available') : t('profile.notAvailable')}
                         </Text>
                     </View>
                 </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
             </View>
 
             {item.skills && item.skills.length > 0 && (
@@ -112,29 +120,30 @@ export default function DiscoverWorkersScreen() {
                     ))}
                 </View>
             )}
-        </TouchableOpacity>
+        </AnimatedTouchableOpacity>
     );
 
     return (
         <SafeAreaView style={styles.safe} edges={['top']}>
-            <View style={styles.header}>
+            <Animated.View entering={FadeInUp.springify()} style={styles.header}>
                 <Text style={styles.title}>{t('navigation.discover')}</Text>
-            </View>
+                <Text style={styles.subtitle}>Find and hire top rated workers</Text>
+            </Animated.View>
 
             <View style={styles.searchSection}>
                 <Pressable 
-                    style={styles.searchBar} 
+                    style={[styles.searchBar, Shadows.sm]} 
                     onPress={() => setIsSkillModalVisible(true)}
                 >
-                    <Ionicons name="briefcase-outline" size={20} color={Colors.textMuted} />
+                    <Ionicons name="briefcase-outline" size={20} color={Colors.primary} />
                     <Text style={[styles.searchInput, { color: searchSkill === t('discover.anyProfession') ? Colors.textMuted : Colors.textPrimary }]}>
                         {searchSkill}
                     </Text>
                     <Ionicons name="chevron-down" size={20} color={Colors.textMuted} />
                 </Pressable>
 
-                <View style={styles.searchBar}>
-                    <Ionicons name="location" size={20} color={Colors.textMuted} />
+                <View style={[styles.searchBar, Shadows.sm]}>
+                    <Ionicons name="location-outline" size={20} color={Colors.primary} />
                     <TextInput
                         style={styles.searchInput}
                         placeholder={t('profile.location')}
@@ -145,17 +154,15 @@ export default function DiscoverWorkersScreen() {
                     />
                 </View>
                 
-                {/* Current Location Action Button */}
                 <TouchableOpacity 
                     style={styles.currentLocationBtn} 
                     onPress={handleGetCurrentLocation} 
                     disabled={isLocating}
-                    activeOpacity={0.7}
                 >
                     {isLocating ? (
-                        <ActivityIndicator size="small" color={Colors.primary} style={{ marginRight: Spacing.sm }} />
+                        <ActivityIndicator size="small" color={Colors.primary} style={{ marginRight: Spacing.xs }} />
                     ) : (
-                        <Ionicons name="locate" size={18} color={Colors.primary} style={{ marginRight: Spacing.sm }} />
+                        <Ionicons name="locate" size={16} color={Colors.primary} style={{ marginRight: Spacing.xs }} />
                     )}
                     <Text style={styles.currentLocationText}>
                         {isLocating ? t('common.loading') : t('discover.useCurrentLocation')}
@@ -168,13 +175,19 @@ export default function DiscoverWorkersScreen() {
                 keyExtractor={(item) => item.id}
                 renderItem={renderWorker}
                 contentContainerStyle={styles.list}
+                showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={isLoading} onRefresh={handleSearch} />
+                    <RefreshControl 
+                      refreshing={isLoading} 
+                      onRefresh={handleSearch} 
+                      colors={[Colors.primary]}
+                      tintColor={Colors.primary}
+                    />
                 }
                 ListEmptyComponent={
                     !isLoading ? (
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
+                            <Ionicons name="people-outline" size={64} color={Colors.textMuted} />
                             <Text style={styles.emptyText}>{t('discover.noWorkers')}</Text>
                         </View>
                     ) : null
@@ -192,9 +205,10 @@ export default function DiscoverWorkersScreen() {
                   style={styles.modalOverlay}
                   onPress={() => setIsSkillModalVisible(false)}
                 >
-                  <View style={styles.modalContent}>
+                  <Animated.View entering={FadeInDown.duration(300)} style={styles.modalContent}>
+                    <View style={styles.modalHandle} />
                     <View style={styles.modalHeader}>
-                      <Text style={styles.title}>{t('auth.selectProfession')}</Text>
+                      <Text style={styles.modalTitle}>{t('auth.selectProfession')}</Text>
                       <Pressable onPress={() => setIsSkillModalVisible(false)}>
                         <Ionicons name="close" size={24} color={Colors.textPrimary} />  
                       </Pressable>
@@ -213,13 +227,13 @@ export default function DiscoverWorkersScreen() {
                                         {prof}
                                     </Text>
                                     {isActive && (
-                                        <Ionicons name="checkmark" size={20} color={Colors.primary} />
+                                        <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />
                                     )}
                                 </Pressable>
                             );
                         })}
                     </ScrollView>
-                  </View>
+                  </Animated.View>
                 </Pressable>
             </Modal>
         </SafeAreaView>
@@ -237,8 +251,16 @@ const styles = StyleSheet.create({
         paddingBottom: Spacing.md,
     },
     title: {
-        ...Typography.h1,
+        fontSize: 28,
+        fontWeight: '800',
         color: Colors.textPrimary,
+        letterSpacing: -0.5,
+    },
+    subtitle: {
+        fontSize: 15,
+        color: Colors.textSecondary,
+        marginTop: 2,
+        fontWeight: '500',
     },
     searchSection: {
         paddingHorizontal: Spacing.xl,
@@ -248,42 +270,43 @@ const styles = StyleSheet.create({
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.surface,
-        borderRadius: Radii.lg,
+        backgroundColor: Colors.white,
+        borderRadius: Radii.xl,
         paddingHorizontal: Spacing.md,
-        height: 48,
+        height: 52,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: Colors.borderLight,
     },
     searchInput: {
         flex: 1,
         marginLeft: Spacing.sm,
         color: Colors.textPrimary,
-        ...Typography.bodyMedium,
+        fontSize: 15,
+        fontWeight: '500',
     },
     currentLocationBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: 'flex-start',
-        paddingVertical: Spacing.xs,
-        paddingHorizontal: Spacing.xs,
-        marginTop: Spacing.xxs,
+        paddingVertical: Spacing.xxs,
+        marginTop: 4,
     },
     currentLocationText: {
-        ...Typography.bodyMedium,
+        fontSize: 14,
         color: Colors.primary,
-        fontWeight: '600',
+        fontWeight: '700',
     },
     list: {
         padding: Spacing.xl,
+        paddingTop: Spacing.sm,
     },
     card: {
-        backgroundColor: Colors.surface,
+        backgroundColor: Colors.white,
         borderRadius: Radii.xl,
         padding: Spacing.lg,
         marginBottom: Spacing.md,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: Colors.borderLight,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -295,95 +318,116 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     name: {
-        ...Typography.h3,
+        fontSize: 18,
+        fontWeight: '800',
         color: Colors.textPrimary,
-        marginBottom: Spacing.xxs,
+        letterSpacing: -0.2,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: Spacing.xxs,
+        marginTop: 2,
     },
     metaText: {
-        ...Typography.bodySm,
+        fontSize: 13,
         color: Colors.textSecondary,
-        marginLeft: Spacing.xxs,
+        marginLeft: 4,
+        fontWeight: '500',
     },
     statusBadge: {
         alignSelf: 'flex-start',
         paddingHorizontal: Spacing.sm,
-        paddingVertical: Spacing.xxs,
+        paddingVertical: 4,
         borderRadius: Radii.full,
-        marginTop: Spacing.xxs,
+        marginTop: 8,
     },
     statusText: {
-        ...Typography.label,
-        fontWeight: '600',
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
     },
     skillsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: Spacing.xs,
+        paddingTop: Spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: Colors.borderLight,
     },
     skillChip: {
-        backgroundColor: Colors.primary + '15',
+        backgroundColor: Colors.primaryMuted,
         paddingHorizontal: Spacing.sm,
-        paddingVertical: Spacing.xxs,
+        paddingVertical: 6,
         borderRadius: Radii.full,
+        borderWidth: 1,
+        borderColor: Colors.primaryBorder,
     },
     skillText: {
-        ...Typography.label,
+        fontSize: 12,
         color: Colors.primary,
-        fontWeight: '500',
+        fontWeight: '700',
     },
     emptyContainer: {
         alignItems: 'center',
         paddingTop: Spacing.xxxl,
     },
     emptyText: {
-        ...Typography.bodyMedium,
+        fontSize: 16,
         color: Colors.textMuted,
+        fontWeight: '600',
         marginTop: Spacing.md,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: Colors.overlay,
         justifyContent: 'flex-end',
     },
     modalContent: {
         backgroundColor: Colors.white,
-        borderTopLeftRadius: Radii.lg,
-        borderTopRightRadius: Radii.lg,
-        padding: Spacing.lg,
-        paddingBottom: Spacing.xxl,
-        maxHeight: '70%',
+        borderTopLeftRadius: Radii.xxl,
+        borderTopRightRadius: Radii.xxl,
+        padding: Spacing.xl,
+        paddingBottom: Spacing.xxxl,
+        maxHeight: '80%',
+    },
+    modalHandle: {
+        width: 40,
+        height: 4,
+        backgroundColor: Colors.border,
+        borderRadius: Radii.full,
+        alignSelf: 'center',
+        marginBottom: Spacing.md,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: Spacing.lg,
+        marginBottom: Spacing.xl,
+    },
+    modalTitle: {
+        ...Typography.h2,
+        color: Colors.textPrimary,
     },
     modalOption: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: Spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: Colors.border,
+        paddingVertical: Spacing.lg,
+        paddingHorizontal: Spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.borderLight,
     },
     modalOptionActive: {
-        backgroundColor: Colors.primaryLight + '20',
-        borderRadius: Radii.sm,
-        paddingHorizontal: Spacing.sm,
+        backgroundColor: Colors.primaryMuted,
+        borderRadius: Radii.md,
         borderBottomWidth: 0,
     },
     modalOptionText: {
-        ...Typography.body,
+        ...Typography.bodyMedium,
         color: Colors.textPrimary,
     },
     modalOptionTextActive: {
         color: Colors.primary,
-        fontWeight: 'bold',
+        fontWeight: '700',
     },
 });

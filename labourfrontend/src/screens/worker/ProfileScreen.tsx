@@ -11,10 +11,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+  Layout,
+} from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useProfile, useUpdateProfile, useUpdateAvailability } from '../../hooks/useProfile';
 import { useAuth } from '../../hooks/useAuth';
-import { useAuthStore } from '../../store/authStore';
 import { WorkerProfile } from '../../types';
 import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
@@ -95,9 +99,9 @@ const WorkerProfileScreen: React.FC = () => {
         }),
       });
       setIsEditing(false);
-      Alert.alert(t('common.welcome'), t('messages.profileUpdated'));
+      Alert.alert('Success', t('messages.profileUpdated'));
     } catch (err) {
-      Alert.alert(t('common.error'), t('common.error'));
+      Alert.alert(t('common.error'), 'Failed to update profile');
     }
   };
 
@@ -105,7 +109,7 @@ const WorkerProfileScreen: React.FC = () => {
     try {
       await availabilityMutation.mutateAsync(value);
     } catch (err) {
-      Alert.alert(t('common.error'), t('common.error'));
+      Alert.alert(t('common.error'), 'Failed to update status');
     }
   };
 
@@ -132,25 +136,24 @@ const WorkerProfileScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Header */}
-        <View style={styles.profileHeader}>
+        <Animated.View entering={FadeInUp.springify()} style={styles.profileHeader}>
           {isEditing ? (
             <Pressable onPress={pickImage} style={styles.avatarEditContainer}>
               <Avatar
                 name={profile.name}
                 uri={editData.avatar_uri}
-                size={90}
+                size={100}
                 showBorder
-                onPress={pickImage}
               />
-              <View style={styles.cameraIconContainer}>
-                <Ionicons name="camera" size={16} color={Colors.white} />
+              <View style={[styles.cameraIconContainer, Shadows.md]}>
+                <Ionicons name="camera" size={18} color={Colors.white} />
               </View>
             </Pressable>
           ) : (
             <Avatar
               name={profile.name}
               uri={profile.avatar_url}
-              size={90}
+              size={100}
               showBorder
             />
           )}
@@ -158,7 +161,7 @@ const WorkerProfileScreen: React.FC = () => {
           <Text style={styles.email}>{profile.email}</Text>
 
           {/* Availability Toggle */}
-          <View style={styles.availabilityRow}>
+          <View style={[styles.availabilityRow, Shadows.sm]}>
             <View
               style={[
                 styles.statusDot,
@@ -175,17 +178,17 @@ const WorkerProfileScreen: React.FC = () => {
             <Switch
               value={workerProfile?.available ?? true}
               onValueChange={toggleAvailability}
-              trackColor={{ false: Colors.surfaceLight, true: Colors.successLight }}
+              trackColor={{ false: Colors.border, true: Colors.successLight }}
               thumbColor={
                 workerProfile?.available ? Colors.success : Colors.textMuted
               }
             />
           </View>
-        </View>
+        </Animated.View>
 
         {isEditing ? (
           /* ─── Edit Mode ─── */
-          <View style={styles.editContainer}>
+          <Animated.View entering={FadeInDown.springify()} style={[styles.editContainer, Shadows.md]}>
             <Input
               label={t('profile.name')}
               value={editData.name}
@@ -233,7 +236,7 @@ const WorkerProfileScreen: React.FC = () => {
               <Button
                 title={t('common.cancel')}
                 onPress={() => setIsEditing(false)}
-                variant="ghost"
+                variant="secondary"
                 fullWidth={false}
                 style={{ flex: 1 }}
               />
@@ -245,40 +248,51 @@ const WorkerProfileScreen: React.FC = () => {
                 style={{ flex: 2 }}
               />
             </View>
-          </View>
+          </Animated.View>
         ) : (
           /* ─── View Mode ─── */
           <>
             {/* Info Cards */}
-            <View style={styles.infoCard}>
+            <Animated.View entering={FadeInDown.delay(200).springify()} style={[styles.infoCard, Shadows.sm]}>
               <View style={styles.infoCardHeader}>
-                <Ionicons name="person-outline" size={20} color={Colors.primary} />
+                <View style={styles.infoIconWrap}>
+                  <Ionicons name="person-outline" size={18} color={Colors.primary} />
+                </View>
                 <Text style={styles.infoCardTitle}>{t('profile.about')}</Text>
-                <Pressable onPress={startEditing} style={styles.editButton}>
-                  <Ionicons name="pencil" size={16} color={Colors.primary} />
+                <Pressable onPress={startEditing} style={[styles.editButton, Shadows.sm]}>
+                  <Ionicons name="pencil" size={14} color={Colors.white} />
                 </Pressable>
               </View>
-              {workerProfile?.bio && (
+              {workerProfile?.bio ? (
                 <Text style={styles.bioText}>{workerProfile.bio}</Text>
+              ) : (
+                <Text style={[styles.bioText, { color: Colors.textMuted, fontStyle: 'italic' }]}>
+                  No bio provided. Tap edit to add one.
+                </Text>
               )}
+              
+              <View style={styles.divider} />
+              
               <InfoRow icon="call-outline" label={t('profile.phone')} value={profile.phone} />
               <InfoRow
                 icon="location-outline"
                 label={t('profile.location')}
-                value={workerProfile?.location || t('profile.notAvailable')}
+                value={workerProfile?.location || 'Not specified'}
               />
               <InfoRow
                 icon="trophy-outline"
                 label={t('profile.experience')}
-                value={workerProfile?.experience || t('profile.notAvailable')}
+                value={workerProfile?.experience || 'Not specified'}
               />
-            </View>
+            </Animated.View>
 
             {/* Skills */}
             {workerProfile?.skills && workerProfile.skills.length > 0 && (
-              <View style={styles.infoCard}>
+              <Animated.View entering={FadeInDown.delay(300).springify()} style={[styles.infoCard, Shadows.sm]}>
                 <View style={styles.infoCardHeader}>
-                  <Ionicons name="construct-outline" size={20} color={Colors.accent} />
+                  <View style={[styles.infoIconWrap, { backgroundColor: Colors.accentMuted }]}>
+                    <Ionicons name="construct-outline" size={18} color={Colors.accent} />
+                  </View>
                   <Text style={styles.infoCardTitle}>{t('profile.skills')}</Text>
                 </View>
                 <View style={styles.skillsRow}>
@@ -288,30 +302,32 @@ const WorkerProfileScreen: React.FC = () => {
                     </View>
                   ))}
                 </View>
-              </View>
+              </Animated.View>
             )}
           </>
         )}
 
         {/* Settings / Language */}
-        <View style={{ marginTop: Spacing.xl }}>
+        <Animated.View entering={FadeInDown.delay(400).springify()} style={{ marginTop: Spacing.md }}>
           <LanguageSelector />
-        </View>
+        </Animated.View>
 
         {/* Logout */}
-        <Button
-          title={t('common.signOut')}
-          onPress={() =>
-            Alert.alert(t('common.signOutConfirmTitle'), t('common.signOutConfirmMessage'), [
-              { text: t('common.cancel'), style: 'cancel' },
-              { text: t('common.signOut'), style: 'destructive', onPress: logout },
-            ])
-          }
-          variant="ghost"
-          loading={logoutLoading}
-          icon={<Ionicons name="log-out-outline" size={20} color={Colors.error} />}
-          style={{ marginTop: Spacing.lg }}
-        />
+        <Animated.View entering={FadeInDown.delay(500).springify()}>
+          <Button
+            title={t('common.signOut')}
+            onPress={() =>
+              Alert.alert(t('common.signOutConfirmTitle'), t('common.signOutConfirmMessage'), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.signOut'), style: 'destructive', onPress: logout },
+              ])
+            }
+            variant="ghost"
+            loading={logoutLoading}
+            icon={<Ionicons name="log-out-outline" size={20} color={Colors.error} />}
+            style={{ marginTop: Spacing.xl, marginBottom: Spacing.xxl }}
+          />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -323,7 +339,7 @@ const InfoRow: React.FC<{
   value: string;
 }> = ({ icon, label, value }) => (
   <View style={styles.infoRow}>
-    <Ionicons name={icon} size={16} color={Colors.textMuted} />
+    <Ionicons name={icon} size={16} color={Colors.primary} style={{ opacity: 0.7 }} />
     <Text style={styles.infoLabel}>{label}</Text>
     <Text style={styles.infoValue} numberOfLines={1}>
       {value}
@@ -342,46 +358,49 @@ const styles = StyleSheet.create({
   },
   profileHeader: {
     alignItems: 'center',
-    paddingTop: Spacing.xl,
+    paddingTop: Spacing.xxl,
     paddingBottom: Spacing.lg,
   },
   name: {
-    ...Typography.h2,
+    fontSize: 24,
+    fontWeight: '800',
     color: Colors.textPrimary,
     marginTop: Spacing.md,
+    letterSpacing: -0.5,
   },
   email: {
-    ...Typography.bodySm,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
+    fontSize: 15,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+    marginTop: 2,
   },
   avatarEditContainer: {
     position: 'relative',
   },
   cameraIconContainer: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: 4,
+    right: 4,
     backgroundColor: Colors.primary,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: Colors.surface,
+    borderColor: Colors.white,
   },
   availabilityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white,
     borderRadius: Radii.full,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    marginTop: Spacing.md,
+    paddingVertical: 6,
+    marginTop: Spacing.lg,
     gap: Spacing.xs,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   statusDot: {
     width: 8,
@@ -389,68 +408,87 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   availabilityText: {
-    ...Typography.bodySm,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textPrimary,
     flex: 1,
+    marginRight: Spacing.md,
   },
   editContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white,
     borderRadius: Radii.xl,
-    padding: Spacing.lg,
+    padding: Spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   editActions: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
   },
   infoCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderRadius: Radii.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   infoCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  infoIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   infoCardTitle: {
-    ...Typography.h3,
+    fontSize: 16,
+    fontWeight: '800',
     color: Colors.textPrimary,
     flex: 1,
   },
   editButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primaryMuted,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bioText: {
-    ...Typography.body,
+    fontSize: 15,
     color: Colors.textSecondary,
-    marginBottom: Spacing.sm,
     lineHeight: 22,
+    fontWeight: '400',
+    marginBottom: Spacing.md,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.borderLight,
+    marginBottom: Spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 6,
   },
   infoLabel: {
-    ...Typography.caption,
+    fontSize: 13,
+    fontWeight: '600',
     color: Colors.textMuted,
-    width: 80,
+    width: 85,
   },
   infoValue: {
-    ...Typography.bodySm,
+    fontSize: 14,
+    fontWeight: '700',
     color: Colors.textPrimary,
     flex: 1,
   },
@@ -461,14 +499,16 @@ const styles = StyleSheet.create({
   },
   skillChip: {
     backgroundColor: Colors.primaryMuted,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xxs + 2,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
     borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Colors.primaryBorder,
   },
   skillText: {
-    ...Typography.caption,
+    fontSize: 12,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
 

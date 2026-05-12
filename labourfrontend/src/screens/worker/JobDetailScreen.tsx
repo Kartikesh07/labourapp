@@ -13,17 +13,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+  Layout,
+} from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { WorkerStackParamList } from '../../types';
 import { useJobDetail } from '../../hooks/useJobs';
 import { useApply } from '../../hooks/useApplications';
-import { formatSalary, formatTimeAgo, getJobTypeLabel, formatDate } from '../../utils/formatters';
+import { formatSalary, formatTimeAgo, getJobTypeLabel } from '../../utils/formatters';
 import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
 import { JobCardSkeleton } from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
 
 type RouteParams = RouteProp<WorkerStackParamList, 'JobDetail'>;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const JobDetailScreen: React.FC = () => {
   const { t } = useTranslation();
@@ -79,22 +86,24 @@ const JobDetailScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Company Header */}
-        <Pressable 
-          style={styles.companyCard}
-          onPress={() => navigation.navigate('EmployerPublicProfile', { employerData: job.profiles })}
-        >
-          <Avatar name={companyName} uri={job.profiles?.avatar_url} size={56} />
-          <View style={styles.companyInfo}>
-            <Text style={styles.jobTitle}>{job.title}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.companyName}>{companyName}</Text>
-              <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={{ marginTop: Spacing.xxs, marginLeft: 4 }} />
+        <Animated.View entering={FadeInUp.springify()}>
+          <Pressable 
+            style={styles.companyCard}
+            onPress={() => navigation.navigate('EmployerPublicProfile', { employerData: job.profiles })}
+          >
+            <Avatar name={companyName} uri={job.profiles?.avatar_url} size={64} />
+            <View style={styles.companyInfo}>
+              <Text style={styles.jobTitle}>{job.title}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                <Text style={styles.companyName}>{companyName}</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.primary} style={{ marginLeft: 4 }} />
+              </View>
             </View>
-          </View>
-        </Pressable>
+          </Pressable>
+        </Animated.View>
 
         {/* Tags Row */}
-        <View style={styles.tagsRow}>
+        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.tagsRow}>
           <View style={styles.tag}>
             <Ionicons name="briefcase-outline" size={14} color={Colors.primary} />
             <Text style={styles.tagText}>{getJobTypeLabel(job.job_type)}</Text>
@@ -109,36 +118,42 @@ const JobDetailScreen: React.FC = () => {
               {formatSalary(job.salary_amount, job.salary_period)}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
-        {/* Info Row */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoCard}>
-            <Ionicons name="people-outline" size={22} color={Colors.primary} />
+        {/* Info Cards */}
+        <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.infoRow}>
+          <View style={[styles.infoCard, Shadows.sm]}>
+            <View style={styles.infoIconWrap}>
+              <Ionicons name="people-outline" size={20} color={Colors.primary} />
+            </View>
             <Text style={styles.infoValue}>{job.applicants_count}</Text>
             <Text style={styles.infoLabel}>{t("applicants.title")}</Text>
           </View>
-          <View style={styles.infoCard}>
-            <Ionicons name="time-outline" size={22} color={Colors.accent} />
+          <View style={[styles.infoCard, Shadows.sm]}>
+            <View style={[styles.infoIconWrap, { backgroundColor: Colors.accentMuted }]}>
+              <Ionicons name="time-outline" size={20} color={Colors.accent} />
+            </View>
             <Text style={styles.infoValue}>{formatTimeAgo(job.created_at)}</Text>
             <Text style={styles.infoLabel}>{t('myApplications.applied')}</Text>
           </View>
-          <View style={styles.infoCard}>
-            <Ionicons name="calendar-outline" size={22} color={Colors.info} />
-            <Text style={styles.infoValue}>{job.category}</Text>
+          <View style={[styles.infoCard, Shadows.sm]}>
+            <View style={[styles.infoIconWrap, { backgroundColor: Colors.infoLight }]}>
+              <Ionicons name="calendar-outline" size={20} color={Colors.info} />
+            </View>
+            <Text style={styles.infoValue} numberOfLines={1}>{job.category}</Text>
             <Text style={styles.infoLabel}>{t("createJob.category")}</Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Description */}
-        <View style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(600).springify()} style={[styles.section, Shadows.sm]}>
           <Text style={styles.sectionTitle}>{t('createJob.description')}</Text>
           <Text style={styles.descriptionText}>{job.description}</Text>
-        </View>
+        </Animated.View>
 
         {/* Requirements */}
         {job.requirements && job.requirements.length > 0 && (
-          <View style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(700).springify()} style={[styles.section, Shadows.sm]}>
             <Text style={styles.sectionTitle}>{t("jobDetail.requirements")}</Text>
             {job.requirements.map((req, i) => (
               <View key={i} style={styles.requirementRow}>
@@ -146,12 +161,12 @@ const JobDetailScreen: React.FC = () => {
                 <Text style={styles.requirementText}>{req}</Text>
               </View>
             ))}
-          </View>
+          </Animated.View>
         )}
 
         {/* Apply Form */}
         {showApplyForm && (
-          <View style={styles.applyForm}>
+          <Animated.View entering={FadeInDown.springify()} style={[styles.applyForm, Shadows.md]}>
             <Text style={styles.sectionTitle}>Your Message (Optional)</Text>
             <TextInput
               style={styles.messageInput}
@@ -163,18 +178,18 @@ const JobDetailScreen: React.FC = () => {
               value={message}
               onChangeText={setMessage}
             />
-          </View>
+          </Animated.View>
         )}
       </ScrollView>
 
       {/* Bottom Apply Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, Shadows.lg]}>
         {showApplyForm ? (
           <View style={styles.applyActions}>
             <Button
               title="Cancel"
               onPress={() => setShowApplyForm(false)}
-              variant="ghost"
+              variant="secondary"
               fullWidth={false}
               style={{ flex: 1 }}
             />
@@ -216,90 +231,110 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
+    backgroundColor: Colors.white,
+    padding: Spacing.md,
+    borderRadius: Radii.xl,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   companyInfo: {
     flex: 1,
   },
   jobTitle: {
-    ...Typography.h2,
+    fontSize: 22,
+    fontWeight: '800',
     color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
   companyName: {
-    ...Typography.bodySm,
-    color: Colors.textMuted,
-    marginTop: Spacing.xxs,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.textSecondary,
   },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.xs,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   tag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.primaryMuted,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
     borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   tagText: {
-    ...Typography.caption,
-    color: Colors.primary,
-    fontWeight: '600',
-    fontSize: 12,
+    fontSize: 13,
+    color: Colors.textPrimary,
+    fontWeight: '700',
   },
   infoRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   infoCard: {
     flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
+    backgroundColor: Colors.white,
+    borderRadius: Radii.xl,
     padding: Spacing.md,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
-    gap: Spacing.xxs,
+    borderColor: Colors.borderLight,
+    gap: 4,
+  },
+  infoIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   infoValue: {
-    ...Typography.bodyMedium,
+    fontSize: 15,
+    fontWeight: '800',
     color: Colors.textPrimary,
-    fontSize: 14,
     textAlign: 'center',
   },
   infoLabel: {
-    ...Typography.caption,
-    color: Colors.textMuted,
     fontSize: 11,
+    color: Colors.textMuted,
+    fontWeight: '600',
   },
   section: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
+    backgroundColor: Colors.white,
+    borderRadius: Radii.xl,
+    padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   sectionTitle: {
-    ...Typography.h3,
+    fontSize: 17,
+    fontWeight: '800',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
+    letterSpacing: -0.2,
   },
   descriptionText: {
-    ...Typography.body,
+    fontSize: 15,
     color: Colors.textSecondary,
     lineHeight: 24,
+    fontWeight: '400',
   },
   requirementRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.sm,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   bullet: {
     width: 6,
@@ -309,35 +344,36 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   requirementText: {
-    ...Typography.body,
+    fontSize: 15,
     color: Colors.textSecondary,
     flex: 1,
     lineHeight: 22,
   },
   applyForm: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
+    backgroundColor: Colors.white,
+    borderRadius: Radii.xl,
+    padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   messageInput: {
-    ...Typography.body,
+    fontSize: 15,
     color: Colors.textPrimary,
     backgroundColor: Colors.surfaceLight,
     borderRadius: Radii.md,
     padding: Spacing.md,
-    minHeight: 100,
-    borderWidth: 1,
+    minHeight: 120,
+    borderWidth: 1.5,
     borderColor: Colors.border,
+    marginTop: Spacing.xs,
   },
   bottomBar: {
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.surface,
+    paddingVertical: Spacing.lg,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: Radii.xxl,
+    borderTopRightRadius: Radii.xxl,
   },
   applyActions: {
     flexDirection: 'row',
