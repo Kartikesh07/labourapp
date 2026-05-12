@@ -12,14 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import Animated, { 
-  FadeInDown, 
-  FadeInUp,
-  Layout,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring
-} from 'react-native-reanimated';
+import { Animated } from 'react-native';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useMyJobs } from '../../hooks/useJobs';
 import { useAuthStore } from '../../store/authStore';
@@ -39,15 +32,12 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, value, label, bgColor, iconColor, index }) => {
-  const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  
+  const {} = {};
 
   return (
     <Animated.View 
-      entering={FadeInDown.delay(400 + (index * 100)).springify()}
-      style={[styles.statCard, { backgroundColor: bgColor }, Shadows.md, animatedStyle]}
+      style={[styles.statCard, { backgroundColor: bgColor }, Shadows.md, {}]}
     >
       <View style={[styles.statIconWrap, { backgroundColor: iconColor + '15' }]}>
         <Ionicons name={icon} size={22} color={iconColor} />
@@ -71,7 +61,7 @@ const DashboardScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.headerSafe} edges={['top']}>
-        <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.heroHeader}>
+        <Animated.View style={styles.heroHeader}>
           <View style={[styles.decorHero, styles.dh1]} />
           <View style={[styles.decorHero, styles.dh2]} />
           <View style={styles.heroInner}>
@@ -129,7 +119,7 @@ const DashboardScreen: React.FC = () => {
         </View>
 
         {/* ── Post Job CTA ──────────────────────────────── */}
-        <Animated.View entering={FadeInDown.delay(700).springify()}>
+        <Animated.View >
           <AnimatedPressable
             onPress={() => navigation.navigate('CreateJob')}
             style={({ pressed }) => [styles.ctaCard, Shadows.glow]}
@@ -146,7 +136,7 @@ const DashboardScreen: React.FC = () => {
         </Animated.View>
 
         {/* ── Recent Jobs ───────────────────────────────── */}
-        <Animated.View entering={FadeInDown.delay(800).springify()}>
+        <Animated.View >
           <Text style={styles.sectionTitle}>{t('employerDashboard.recentJobs')}</Text>
         </Animated.View>
 
@@ -158,7 +148,7 @@ const DashboardScreen: React.FC = () => {
         ) : isError ? (
           <ErrorState message={t('common.error')} onRetry={refetch} />
         ) : activeJobs.length === 0 ? (
-          <Animated.View entering={FadeInDown.springify()} style={styles.emptyJobs}>
+          <Animated.View style={styles.emptyJobs}>
             <View style={styles.emptyIconWrap}>
               <Ionicons name="briefcase-outline" size={48} color={Colors.primary} />
             </View>
@@ -170,7 +160,6 @@ const DashboardScreen: React.FC = () => {
             {activeJobs.slice(0, 3).map((job, index) => (
               <AnimatedPressable
                 key={job.id}
-                entering={FadeInDown.delay(900 + (index * 100)).springify()}
                 onPress={() => navigation.navigate('Applicants', { jobId: job.id, jobTitle: job.title })}
                 style={[styles.jobCard, Shadows.sm]}
               >

@@ -13,14 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import Animated, { 
-  FadeInDown, 
-  FadeInUp, 
-  Layout,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring
-} from 'react-native-reanimated';
+import { Animated } from 'react-native';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { AuthStackParamList, UserRole } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -45,25 +38,22 @@ interface RoleCardProps {
 }
 
 const RoleCard: React.FC<RoleCardProps> = ({ icon, label, description, isActive, onPress, index }) => {
-  const scale = useSharedValue(1);
+  
 
   useEffect(() => {
-    scale.value = withSpring(isActive ? 1.03 : 1, { damping: 12, stiffness: 200 });
+    
   }, [isActive]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const {} = {};
 
   return (
     <AnimatedPressable
-      entering={FadeInDown.delay(400 + (index * 100)).springify()}
       onPress={onPress}
       style={[
         styles.roleCard, 
         isActive && styles.roleCardActive,
         isActive && Shadows.glow,
-        animatedStyle
+        {}
       ]}
     >
       <View style={[styles.roleIconWrap, isActive && styles.roleIconWrapActive]}>
@@ -141,7 +131,6 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         <View style={[styles.decorCircle, styles.dc2]} />
         <SafeAreaView edges={['top']}>
           <Animated.View 
-            entering={FadeInUp.springify()}
             style={styles.heroContent}
           >
             <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -159,7 +148,6 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         style={styles.flex}
       >
         <Animated.View 
-          entering={FadeInDown.delay(200).springify().damping(15)}
           style={[styles.formSheet, Shadows.lg]}
         >
           <ScrollView
@@ -169,7 +157,6 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           >
             {error && (
               <Animated.View 
-                entering={FadeInDown.springify()}
                 style={styles.errorBanner}
               >
                 <Ionicons name="alert-circle" size={18} color={Colors.error} />
@@ -178,7 +165,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             )}
 
             {/* Role Selection */}
-            <Animated.View entering={FadeInDown.delay(300).springify()}>
+            <Animated.View >
               <Text style={styles.sectionLabel}>{t('auth.roleLabel')}</Text>
               <View style={styles.roleRow}>
                 <RoleCard
@@ -209,28 +196,28 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Form Fields */}
             <View style={styles.formContainer}>
-              <Animated.View entering={FadeInDown.delay(500).springify()} layout={Layout.springify()}>
+              <Animated.View >
                 <Input label={t('profile.name')} placeholder={t('auth.namePlaceholder')} leftIcon="person-outline" autoCapitalize="words" value={name} onChangeText={setName} error={fieldErrors.name} />
               </Animated.View>
               
-              <Animated.View entering={FadeInDown.delay(600).springify()} layout={Layout.springify()}>
+              <Animated.View >
                 <Input label={t('auth.emailLabel')} placeholder={t('auth.emailPlaceholder')} leftIcon="mail-outline" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} value={email} onChangeText={setEmail} error={fieldErrors.email} />
               </Animated.View>
               
-              <Animated.View entering={FadeInDown.delay(700).springify()} layout={Layout.springify()}>
+              <Animated.View >
                 <Input label={t('auth.phoneLabel')} placeholder="9876543210" leftIcon="call-outline" keyboardType="phone-pad" value={phone} onChangeText={setPhone} error={fieldErrors.phone} />
               </Animated.View>
               
-              <Animated.View entering={FadeInDown.delay(800).springify()} layout={Layout.springify()}>
+              <Animated.View >
                 <Input label={t('auth.passwordLabel')} placeholder={t('auth.passwordHint')} leftIcon="lock-closed-outline" secureTextEntry value={password} onChangeText={setPassword} error={fieldErrors.password} />
               </Animated.View>
               
-              <Animated.View entering={FadeInDown.delay(900).springify()} layout={Layout.springify()}>
+              <Animated.View >
                 <Input label={t('auth.locationLabel')} placeholder="e.g. Mumbai, Maharashtra" leftIcon="location-outline" value={location} onChangeText={setLocation} error={fieldErrors.location} />
               </Animated.View>
 
               {role === 'worker' && (
-                <Animated.View entering={FadeInDown.springify()} style={styles.skillInputWrapper}>
+                <Animated.View style={styles.skillInputWrapper}>
                   <Text style={styles.inputLabel}>{t('auth.professionLabel')}</Text>
                   <Pressable
                     style={[styles.skillSelector, fieldErrors.skills && styles.inputErrorBorder]}
@@ -246,12 +233,12 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 </Animated.View>
               )}
 
-              <Animated.View entering={FadeInDown.delay(1000).springify()}>
+              <Animated.View >
                 <Button title={t('auth.signUp')} onPress={handleRegister} loading={isLoading} size="lg" style={{ marginTop: Spacing.sm }} />
               </Animated.View>
             </View>
 
-            <Animated.View entering={FadeInDown.delay(1100).springify()} style={styles.footer}>
+            <Animated.View style={styles.footer}>
               <Text style={styles.footerText}>{t('auth.haveAccount')}</Text>
               <Pressable onPress={() => navigation.navigate('Login')}>
                 <Text style={styles.footerLink}> {t('auth.signIn')}</Text>
@@ -264,7 +251,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       {/* Profession Modal */}
       <Modal visible={isSkillModalVisible} transparent animationType="slide" onRequestClose={() => setIsSkillModalVisible(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setIsSkillModalVisible(false)}>
-          <Animated.View entering={FadeInDown.duration(300)} style={styles.modalContent}>
+          <Animated.View style={styles.modalContent}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('auth.selectProfession')}</Text>

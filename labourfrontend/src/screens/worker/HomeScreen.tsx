@@ -14,11 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import Animated, { 
-  FadeInDown, 
-  FadeInUp,
-  Layout,
-} from 'react-native-reanimated';
+import { Animated } from 'react-native';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { useJobs } from '../../hooks/useJobs';
 import { useAuthStore } from '../../store/authStore';
@@ -63,7 +59,7 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       <SafeAreaView style={styles.headerSafe} edges={['top']}>
         {/* ── Header ─────────────────────────────────── */}
-        <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.header}>
+        <Animated.View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={[styles.avatar, Shadows.sm]}>
               <Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>

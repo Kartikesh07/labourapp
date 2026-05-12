@@ -14,11 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { 
   FadeInDown, 
-  FadeInUp, 
-  Layout,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring
+  FadeInUp,
 } from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { AuthStackParamList } from '../../types';
@@ -34,8 +30,6 @@ type Props = {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HERO_HEIGHT = SCREEN_HEIGHT * 0.35;
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
@@ -258,7 +252,7 @@ const styles = StyleSheet.create({
   // ── Form Sheet ──────────────────────────
   formSheet: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.white,
     borderTopLeftRadius: Radii.xxl,
     borderTopRightRadius: Radii.xxl,
     marginTop: -Spacing.xxl,
@@ -270,7 +264,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl,
   },
   formTitle: { ...Typography.h1, color: Colors.textPrimary, marginBottom: Spacing.xxs },
-  formSubtitle: { ...Typography.bodySm, color: Colors.textMuted, marginBottom: Spacing.xl },
+  formSubtitle: { ...Typography.bodySm, color: Colors.textSecondary, marginBottom: Spacing.xl },
 
   // ── Error ───────────────────────────────
   errorBanner: {
@@ -302,7 +296,7 @@ const styles = StyleSheet.create({
   divider: { flex: 1, height: 1, backgroundColor: Colors.border },
   dividerText: { ...Typography.caption, color: Colors.textMuted, fontWeight: '600' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
-  footerText: { ...Typography.bodySm, color: Colors.textMuted },
+  footerText: { ...Typography.bodySm, color: Colors.textSecondary },
   footerLink: { ...Typography.bodySm, color: Colors.primary, fontWeight: '700' },
 });
 
