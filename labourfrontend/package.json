@@ -7,7 +7,21 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "check-locales": "node scripts/check-locales.js"
+    "check-locales": "node scripts/check-locales.js",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "setupFiles": [
+      "./jest.setup.js"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^react-native$": "react-native-web"
+    }
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -37,8 +51,14 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
     "@types/i18next": "^12.1.0",
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
+    "babel-preset-expo": "^55.0.21",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.9",
     "typescript": "~5.9.2"
   },
   "private": true
