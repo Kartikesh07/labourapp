@@ -1,6 +1,5 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import {
-  Animated,
   Pressable,
   Text,
   StyleSheet,
@@ -8,12 +7,17 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring 
+} from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../theme';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'accent';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
@@ -21,6 +25,8 @@ interface ButtonProps {
   fullWidth?: boolean;
   style?: ViewStyle;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const Button: React.FC<ButtonProps> = ({
   title,
@@ -33,79 +39,61 @@ const Button: React.FC<ButtonProps> = ({
   fullWidth = true,
   style,
 }) => {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
   const isDisabled = disabled || loading;
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handlePressIn = () => {
     if (!isDisabled) {
-      Animated.spring(scale, {
-        toValue: 0.96,
-        useNativeDriver: true,
-        speed: 40,
-        bounciness: 0,
-      }).start();
+      scale.value = withSpring(0.96, { damping: 10, stiffness: 300 });
     }
   };
 
   const handlePressOut = () => {
-    if (!isDisabled) {
-      Animated.spring(scale, {
-        toValue: 1,
-        useNativeDriver: true,
-        speed: 30,
-        bounciness: 4,
-      }).start();
-    }
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
   };
 
-  const variantStyle = styles[variant as keyof typeof styles] as ViewStyle | undefined;
-  const sizeStyle = styles[`size_${size}` as keyof typeof styles] as ViewStyle | undefined;
-  const textVariantStyle = styles[`text_${variant}` as keyof typeof styles] as TextStyle | undefined;
-  const textSizeStyle = styles[`text_${size}` as keyof typeof styles] as TextStyle | undefined;
-
   return (
-    <Animated.View
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={isDisabled}
       style={[
-        { transform: [{ scale }] },
-        fullWidth && { width: '100%' },
+        styles.base,
+        styles[variant],
+        styles[`size_${size}`],
+        fullWidth && styles.fullWidth,
+        isDisabled && styles.disabled,
+        variant === 'primary' && !isDisabled && Shadows.glow,
+        animatedStyle,
         style,
       ]}
     >
-      <Pressable
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={isDisabled}
-        style={[
-          styles.base,
-          variantStyle,
-          sizeStyle,
-          variant === 'primary' && !isDisabled && Shadows.md,
-          isDisabled && styles.disabled,
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator
-            color={variant === 'outline' || variant === 'ghost' ? Colors.primary : Colors.white}
-            size="small"
-          />
-        ) : (
-          <>
-            {icon}
-            <Text
-              style={[
-                styles.text,
-                textVariantStyle,
-                textSizeStyle,
-                icon ? { marginLeft: Spacing.xs } : undefined,
-              ]}
-            >
-              {title}
-            </Text>
-          </>
-        )}
-      </Pressable>
-    </Animated.View>
+      {loading ? (
+        <ActivityIndicator
+          color={variant === 'outline' || variant === 'ghost' ? Colors.primary : Colors.white}
+          size="small"
+        />
+      ) : (
+        <>
+          {icon}
+          <Text
+            style={[
+              styles.text,
+              styles[`text_${variant}`],
+              styles[`text_${size}`],
+              icon ? { marginLeft: Spacing.xs } : undefined,
+            ]}
+          >
+            {title}
+          </Text>
+        </>
+      )}
+    </AnimatedPressable>
   );
 };
 
@@ -114,42 +102,80 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radii.md, // Changed from full to md for modern look
+    borderRadius: Radii.md,
   },
-  disabled: { opacity: 0.45 },
+  fullWidth: {
+    width: '100%',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
 
-  // ─── Variants ────────────────────────────────
-  primary: { backgroundColor: Colors.primary },
-  accent: { backgroundColor: Colors.accent },
+  // ─── Variants ────────────────────
+  primary: {
+    backgroundColor: Colors.primary,
+  },
   secondary: {
-    backgroundColor: Colors.primaryMuted,
+    backgroundColor: Colors.surfaceLight,
     borderWidth: 1,
-    borderColor: Colors.primaryBorder,
+    borderColor: Colors.border,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: Colors.primary,
   },
-  ghost: { backgroundColor: 'transparent' },
-  danger: { backgroundColor: Colors.error },
+  ghost: {
+    backgroundColor: 'transparent',
+  },
+  danger: {
+    backgroundColor: Colors.error,
+  },
 
-  // ─── Sizes ───────────────────────────────────
-  size_sm: { paddingVertical: Spacing.xs, paddingHorizontal: Spacing.md, minHeight: 40 },
-  size_md: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, minHeight: 48 },
-  size_lg: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, minHeight: 56 },
+  // ─── Sizes ───────────────────────
+  size_sm: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radii.sm,
+  },
+  size_md: {
+    paddingVertical: Spacing.sm + 4,
+    paddingHorizontal: Spacing.lg,
+  },
+  size_lg: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: Radii.lg,
+  },
 
-  // ─── Text ────────────────────────────────────
-  text: { ...Typography.button } as TextStyle,
-  text_primary: { color: Colors.white },
-  text_accent: { color: Colors.white },
-  text_secondary: { color: Colors.primary },
-  text_outline: { color: Colors.textPrimary },
-  text_ghost: { color: Colors.primary },
-  text_danger: { color: Colors.white },
-  text_sm: { fontSize: 14 },
-  text_md: { fontSize: 16 },
-  text_lg: { fontSize: 17 },
+  // ─── Text ────────────────────────
+  text: {
+    ...Typography.button,
+  } as TextStyle,
+  text_primary: {
+    color: Colors.white,
+  },
+  text_secondary: {
+    color: Colors.textPrimary,
+  },
+  text_outline: {
+    color: Colors.primary,
+  },
+  text_ghost: {
+    color: Colors.primary,
+  },
+  text_danger: {
+    color: Colors.white,
+  },
+  text_sm: {
+    fontSize: 14,
+  },
+  text_md: {
+    fontSize: 16,
+  },
+  text_lg: {
+    fontSize: 18,
+  },
 });
 
 export default Button;

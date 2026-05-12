@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,18 @@ import {
   ScrollView,
   Pressable,
   Dimensions,
-  Animated,
-  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp, 
+  Layout,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring
+} from 'react-native-reanimated';
 import { Colors, Spacing, Radii, Typography, Shadows } from '../../theme';
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -26,7 +32,10 @@ type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const HERO_HEIGHT = SCREEN_HEIGHT * 0.35;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
@@ -34,16 +43,6 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
-
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.spring(slideAnim, { toValue: 0, tension: 20, friction: 7, useNativeDriver: true }),
-    ]).start();
-  }, []);
 
   const handleLogin = async () => {
     clearError();
@@ -62,46 +61,80 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <SafeAreaView style={styles.container}>
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            {/* ── Logo & Header ──────────────────────────── */}
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
-                <Ionicons name="briefcase" size={32} color={Colors.white} />
-              </View>
-              <Text style={styles.title}>{t('common.welcome', 'Welcome Back')}</Text>
-              <Text style={styles.subtitle}>
-                {t('auth.signInSubtitle', 'Sign in to access your dashboard')}
-              </Text>
-            </View>
+      {/* ── Hero Section ──────────────────────────────── */}
+      <View style={styles.hero}>
+        <View style={[styles.decorCircle, styles.decorCircle1]} />
+        <View style={[styles.decorCircle, styles.decorCircle2]} />
+        <View style={[styles.decorCircle, styles.decorCircle3]} />
 
-            {/* ── Error Display ─────────────────────────── */}
+        <SafeAreaView edges={['top']} style={styles.flex}>
+          <Animated.View 
+            entering={FadeInUp.delay(200).duration(800).springify()}
+            style={styles.heroContent}
+          >
+            <Animated.View 
+              entering={FadeInDown.delay(400).springify()}
+              style={[styles.brandMark, Shadows.glow]}
+            >
+              <Ionicons name="hammer" size={28} color={Colors.white} />
+            </Animated.View>
+            <View style={styles.brandNameRow}>
+              <Text style={styles.brandKaam}>Kaam</Text>
+              <Text style={styles.brandReady}>Ready</Text>
+            </View>
+            <Text style={styles.heroTagline}>
+              {t('auth.tagline', 'Find skilled workers. Get hired. Fast.')}
+            </Text>
+          </Animated.View>
+        </SafeAreaView>
+      </View>
+
+      {/* ── Form Sheet ───────────────────────────────── */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex}
+      >
+        <Animated.View
+          entering={FadeInDown.delay(300).duration(600).springify().damping(15)}
+          style={[styles.formSheet, Shadows.lg]}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Animated.View entering={FadeInDown.delay(500).springify()}>
+              <Text style={styles.formTitle}>{t('common.welcome')}</Text>
+              <Text style={styles.formSubtitle}>
+                {t('auth.signInSubtitle', 'Sign in to your account')}
+              </Text>
+            </Animated.View>
+
             {error && (
-              <View style={styles.errorBanner}>
+              <Animated.View 
+                entering={FadeInDown.springify()}
+                style={styles.errorBanner}
+              >
                 <Ionicons name="alert-circle" size={18} color={Colors.error} />
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
+                <Text style={styles.errorBannerText}>{error}</Text>
+              </Animated.View>
             )}
 
-            {/* ── Form Fields ────────────────────────────── */}
-            <View style={styles.form}>
+            <Animated.View entering={FadeInDown.delay(600).springify()}>
               <Input
                 label={t('auth.emailLabel')}
                 placeholder={t('auth.emailPlaceholder')}
                 leftIcon="mail-outline"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoCorrect={false}
                 value={email}
                 onChangeText={(v) => { setEmail(v); clearError(); }}
                 error={fieldErrors.email}
               />
+            </Animated.View>
 
+            <Animated.View entering={FadeInDown.delay(700).springify()}>
               <Input
                 label={t('auth.passwordLabel')}
                 placeholder={t('auth.passwordPlaceholder')}
@@ -111,83 +144,135 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 onChangeText={(v) => { setPassword(v); clearError(); }}
                 error={fieldErrors.password}
               />
+            </Animated.View>
 
+            <Animated.View entering={FadeInDown.delay(800).springify()}>
               <Pressable style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword', 'Forgot Password?')}</Text>
+                <Text style={styles.forgotPasswordText}>
+                  {t('auth.forgotPassword', 'Forgot password?')}
+                </Text>
               </Pressable>
 
               <Button
-                title={t('auth.submit', 'Sign In')}
+                title={t('auth.submit')}
                 onPress={handleLogin}
                 loading={isLoading}
                 size="lg"
-                style={styles.submitBtn}
+                style={{ marginTop: Spacing.xs }}
               />
-            </View>
 
-            {/* ── Footer ────────────────────────────────── */}
-            <View style={styles.dividerRow}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>{t('common.or', 'OR')}</Text>
-              <View style={styles.divider} />
-            </View>
+              <View style={styles.dividerRow}>
+                <View style={styles.divider} />
+                <Text style={styles.dividerText}>{t('common.or', 'or')}</Text>
+                <View style={styles.divider} />
+              </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>{t('auth.noAccount', "Don't have an account?")}</Text>
-              <Pressable onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.joinText}>{t('auth.signUp', 'Join Now')}</Text>
-              </Pressable>
-            </View>
-          </Animated.View>
-        </ScrollView>
-      </SafeAreaView>
+              <Button
+                title={t('auth.signUp', 'Create account')}
+                onPress={() => navigation.navigate('Register')}
+                variant="outline"
+                size="lg"
+              />
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>
+                  {t('auth.noAccount', "Don't have an account?")}
+                </Text>
+                <Pressable onPress={() => navigation.navigate('Register')}>
+                  <Text style={styles.footerLink}> {t('auth.signUp', 'Join now')}</Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
+  root: { flex: 1, backgroundColor: Colors.hero },
+  flex: { flex: 1 },
+
+  // ── Hero ────────────────────────────────
+  hero: {
+    height: HERO_HEIGHT,
+    backgroundColor: Colors.hero,
+    overflow: 'hidden',
+  },
+  decorCircle: {
+    position: 'absolute',
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  decorCircle1: { width: 260, height: 260, top: -100, right: -80 },
+  decorCircle2: { width: 180, height: 150, top: 40, left: -60 },
+  decorCircle3: {
+    width: 120,
+    height: 120,
+    bottom: 20,
+    right: 20,
+    backgroundColor: 'rgba(249, 115, 22, 0.18)',
+  },
+  heroContent: {
     flex: 1,
-    backgroundColor: Colors.background,
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
+    paddingHorizontal: Spacing.xl,
     justifyContent: 'center',
-    padding: Spacing.xl,
+    paddingBottom: Spacing.xl,
   },
-  content: {
-    width: '100%',
-  },
-  header: {
+  brandMark: {
+    width: 60,
+    height: 60,
+    borderRadius: Radii.lg,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
-    marginBottom: Spacing.xxl,
-  },
-  logoContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: Radii.xl,
-    backgroundColor: Colors.primary,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-    ...Shadows.glow,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  title: {
-    ...Typography.h1,
-    textAlign: 'center',
+  brandNameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
     marginBottom: Spacing.xs,
   },
-  subtitle: {
-    ...Typography.body,
-    textAlign: 'center',
-    color: Colors.textSecondary,
+  brandKaam: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: Colors.white,
+    letterSpacing: -0.8,
   },
-  form: {
-    marginTop: Spacing.md,
+  brandReady: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: Colors.accentLight,
+    letterSpacing: -0.8,
   },
+  heroTagline: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+
+  // ── Form Sheet ──────────────────────────
+  formSheet: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: Radii.xxl,
+    borderTopRightRadius: Radii.xxl,
+    marginTop: -Spacing.xxl,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xxl,
+    paddingBottom: Spacing.xxl,
+  },
+  formTitle: { ...Typography.h1, color: Colors.textPrimary, marginBottom: Spacing.xxs },
+  formSubtitle: { ...Typography.bodySm, color: Colors.textMuted, marginBottom: Spacing.xl },
+
+  // ── Error ───────────────────────────────
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -195,59 +280,30 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: Radii.md,
     marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.error + '20',
     gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.error + '30',
   },
-  errorText: {
-    ...Typography.bodySm,
-    color: Colors.error,
-    flex: 1,
-  },
+  errorBannerText: { ...Typography.bodySm, color: Colors.error, flex: 1, fontWeight: '500' },
+
+  // ── Misc ────────────────────────────────
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
+    marginTop: -Spacing.xs,
   },
-  forgotPasswordText: {
-    ...Typography.bodySm,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  submitBtn: {
-    marginTop: Spacing.xs,
-  },
+  forgotPasswordText: { ...Typography.bodySm, color: Colors.primary, fontWeight: '600' },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.xxl,
-    gap: Spacing.md,
+    marginVertical: Spacing.xl,
+    gap: Spacing.sm,
   },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    ...Typography.caption,
-    color: Colors.textMuted,
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
-  },
-  footerText: {
-    ...Typography.body,
-    color: Colors.textSecondary,
-  },
-  joinText: {
-    ...Typography.body,
-    color: Colors.primary,
-    fontWeight: '700',
-  },
+  divider: { flex: 1, height: 1, backgroundColor: Colors.border },
+  dividerText: { ...Typography.caption, color: Colors.textMuted, fontWeight: '600' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
+  footerText: { ...Typography.bodySm, color: Colors.textMuted },
+  footerLink: { ...Typography.bodySm, color: Colors.primary, fontWeight: '700' },
 });
 
 export default LoginScreen;
